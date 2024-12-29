@@ -44,7 +44,7 @@ def store_urls(base_url, urls, db_path='articles.db'):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     for url in urls:
-        print(f"Storing {url}")
+        #print(f"Storing {url}")
         cursor.execute('''
             INSERT OR IGNORE INTO articles (base_url, url) VALUES (?, ?)
         ''', (base_url, url,))

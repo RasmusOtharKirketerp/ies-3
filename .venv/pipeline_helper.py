@@ -1,5 +1,7 @@
 #here is utility functions for the pipeline
 import sqlite3
+import time
+from datetime import datetime
 
 # Decription of the pipeline
 # ################################################################################################
@@ -23,28 +25,16 @@ websites = {
 }
 
 ### step 1 - discover_articles
-def step_1_deamon_discover_articles(base_url):
+def step_1_discover_articles(base_url):
     #this function discovers the main page of the website and saves only the urls of the articles in the db
     import discover_articles
-    from pipeline_helper import fetch_urls_for_download
-    from save_raw_article import prepare_db, store_urls, update_article
-    from downloan_articles import download_article
-    from score_text import score_articles_in_db
+    from save_raw_article import store_urls
 
     urls = discover_articles.discover_articles(base_url)
     store_urls(base_url, urls)
 
-def run_step_1_as_deamon():
-    import time
-    import threading
-    for base_url in websites.keys():
-        threading.Thread(target=step_1_deamon_discover_articles, args=(base_url,)).start()
-    while True:
-        print('Discover articles deamon sleeping')
-        time.sleep(websites[base_url]*60)
-
 ### step 2 - download_articles
-def step_2_deamon_download_articles():
+def step_2_download_articles():
     #this function downloads the articles from the urls in the db
     from pipeline_helper import fetch_urls_for_download
     from save_raw_article import update_article
@@ -56,29 +46,14 @@ def step_2_deamon_download_articles():
         article_data = download_article(url)
         print(f'Updating article: {url}')
         update_article(article_data)
-    
-def run_step_2_as_deamon():
-    import time
-    import threading
-    threading.Thread(target=step_2_deamon_download_articles).start()
-    while True:
-        print('Download articles deamon sleeping')
-        time.sleep(60)
-        
+
 ### step 3 - score_articles
-def step_3_deamon_score_articles():
+def step_3_score_articles():
     #this function scores the articles in the db
     from score_text import score_articles_in_db
     print('Scoring articles')
-    score_articles_in_db()
+    score_articles_in_db(rescoring=True)
 
-def run_step_3_as_deamon():
-    import time
-    import threading
-    threading.Thread(target=step_3_deamon_score_articles).start()
-    while True:
-        print('Scoring articles deamon sleeping')
-        time.sleep(30)
 
 ### step 4 - rewrite_articles
 def step_4_deamon_rewrite_articles():
@@ -87,41 +62,19 @@ def step_4_deamon_rewrite_articles():
     print('Rewriting articles')
     rewrite_text_in_db()
 
-def run_step_4_as_deamon():
-    import time
-    import threading
-    threading.Thread(target=step_4_deamon_rewrite_articles).start()
+def run_pipeline():
     while True:
-        print('Rewriting articles deamon sleeping')
-        time.sleep(60)
-
-def run_pipeline():   
-    import threading
-    threading.Thread(target=run_step_1_as_deamon).start()
-    threading.Thread(target=run_step_2_as_deamon).start()
-    threading.Thread(target=run_step_3_as_deamon).start()
-    threading.Thread(target=run_step_4_as_deamon).start()
-
-if __name__ == '__main__':
-    run_pipeline()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        for base_url, wait_time in websites.items():
+            print(f'Discovering articles for {base_url}')
+            step_1_discover_articles(base_url)
+        step_2_download_articles()
+        step_3_score_articles()
+        step_4_deamon_rewrite_articles()
+        wait_time = 60
+        print("Datetime: ", datetime.now())
+        print(f'Waiting {wait_time} seconds')
+        time.sleep(wait_time)
+    
 
 ################################################################################################
 # utility functions for the pipeline
@@ -161,4 +114,18 @@ def fetch_id_and_text_from_articles(db_path='articles.db'):
     conn.close()
     return articles
 
+def fetch_id_and_text_from_articles_with_no_score(db_path='articles.db'):
+    #this function fetches the id and text of the articles
+    #from the database where the score is null
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, text FROM articles WHERE score IS NULL
+    ''')
+    articles = cursor.fetchall()
+    conn.close()
+    return articles
 
+
+if __name__ == '__main__':
+    run_pipeline()
