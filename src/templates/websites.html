@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Management</title>
+    <style>
+        body { padding: 20px; }
+        .form-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+        th { background-color: #f4f4f4; }
+        .button { padding: 5px 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Website Management</h1>
+    <div class="button-container">
+        <a href="/" class="button">Back to Articles</a>
+    </div>
+
+    <div class="form-section">
+        <h2>Add New Website</h2>
+        <form action="/websites/add" method="POST">
+            <input type="url" name="url" placeholder="Website URL" required>
+            <input type="number" name="refresh_time" placeholder="Refresh Time (minutes)" required min="1" value="60">
+            <select name="language" required>
+                <option value="da">Danish</option>
+                <option value="en">English</option>
+            </select>
+            <button type="submit">Add Website</button>
+        </form>
+    </div>
+
+    <h2>Website List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Refresh Time (min)</th>
+                <th>Language</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for url, refresh_time, language, active in websites %}
+            <tr>
+                <td>{{ url }}</td>
+                <td>{{ refresh_time }}</td>
+                <td>{{ language }}</td>
+                <td>{{ "Active" if active else "Inactive" }}</td>
+                <td>
+                    <form action="/websites/toggle" method="POST" style="display: inline;">
+                        <input type="hidden" name="url" value="{{ url }}">
+                        <input type="hidden" name="active" value="{{ '0' if active else '1' }}">
+                        <button type="submit" class="button">
+                            {{ "Deactivate" if active else "Activate" }}
+                        </button>
+                    </form>
+                    <form action="/websites/delete" method="POST" style="display: inline;">
+                        <input type="hidden" name="url" value="{{ url }}">
+                        <button type="submit" class="button">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

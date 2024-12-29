@@ -6,6 +6,7 @@ class ScoringWords:
     def __init__(self, db_path: str = 'articles.db'):
         self.db_path = db_path
         self._create_table()
+        self._create_websites_table()  # Add this line
 
     def _create_table(self):
         conn = sqlite3.connect(self.db_path)
@@ -18,6 +19,21 @@ class ScoringWords:
                 weight FLOAT NOT NULL,
                 category TEXT,
                 UNIQUE(word_da, word_en)
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def _create_websites_table(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS websites (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                url TEXT NOT NULL UNIQUE,
+                refresh_time INTEGER NOT NULL,
+                language TEXT NOT NULL,
+                active BOOLEAN DEFAULT 1
             )
         ''')
         conn.commit()
@@ -148,6 +164,67 @@ class ScoringWords:
         """Remove common punctuation marks from words."""
         return word.strip(',.!?:;\"\'')
 
+    def add_website(self, url: str, refresh_time: int, language: str = 'da') -> bool:
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO websites (url, refresh_time, language)
+                VALUES (?, ?, ?)
+            ''', (url, refresh_time, language))
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.Error:
+            return False
+
+    def get_all_websites(self) -> List[Tuple]:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT url, refresh_time, language, active FROM websites')
+        websites = cursor.fetchall()
+        conn.close()
+        return websites
+
+    def update_website_status(self, url: str, active: bool) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE websites 
+            SET active = ? 
+            WHERE url = ?
+        ''', (active, url))
+        success = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        return success
+
+    def delete_website(self, url: str) -> bool:
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM websites WHERE url = ?', (url,))
+            success = cursor.rowcount > 0
+            conn.commit()
+            conn.close()
+            return success
+        except sqlite3.Error:
+            return False
+
+    def populate_sample_websites(self):
+        websites = {
+            'https://nyheder.tv2.dk/': ('da', 60),
+            'https://www.dr.dk/nyheder/': ('da', 60),
+            'https://cnn.com/': ('en', 60),
+            'https://www.bt.dk/': ('da', 60),
+            'https://ekstrabladet.dk/': ('da', 60),
+            'https://www.berlingske.dk/': ('da', 60),
+            'https://www.version2.dk/': ('da', 60),
+            'https://www.computerworld.dk/': ('da', 60),
+        }
+        for url, (lang, refresh) in websites.items():
+            self.add_website(url, refresh, lang)
+
 if __name__ == '__main__':
     scoring_words = ScoringWords()
     scoring_words.populate_sample_words()
@@ -165,5 +242,8 @@ if __name__ == '__main__':
     print(words)
     #add all words from translation_cache1000.json with wiehgts of 0.5
     scoring_words.import_from_translation_cache()
+    scoring_words.populate_sample_websites()
+    websites = scoring_words.get_all_websites()
+    print(websites)
 
 

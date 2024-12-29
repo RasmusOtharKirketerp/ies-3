@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 from pipeline_helper import run_pipeline, step_3_score_articles
-from datetime import datetime
+from datetime import datetime, timedelta
 from scoring_words import ScoringWords
+import os
 
 app = Flask(__name__)
 
@@ -67,7 +68,7 @@ def recalculate_scores():
 
 def recalculate_all_scores():
     from score_text import score_articles_in_db
-    score_articles_in_db(rescoring=True)
+    score_articles_in_db()
 
 @app.route('/')
 def index():
@@ -119,6 +120,108 @@ def update_word():
     scoring_words.update_weight(word_da, word_en, new_weight)
     recalculate_all_scores()
     return redirect(url_for('words'))
+
+@app.route('/websites')
+def websites():
+    all_websites = scoring_words.get_all_websites()
+    return render_template('websites.html', websites=all_websites)
+
+@app.route('/websites/add', methods=['POST'])
+def add_website():
+    url = request.form.get('url')
+    refresh_time = int(request.form.get('refresh_time', 60))
+    language = request.form.get('language', 'da')
+    scoring_words.add_website(url, refresh_time, language)
+    return redirect(url_for('websites'))
+
+@app.route('/websites/toggle', methods=['POST'])
+def toggle_website():
+    url = request.form.get('url')
+    active = request.form.get('active') == '1'
+    scoring_words.update_website_status(url, active)
+    return redirect(url_for('websites'))
+
+@app.route('/websites/delete', methods=['POST'])
+def delete_website():
+    url = request.form.get('url')
+    scoring_words.delete_website(url)
+    return redirect(url_for('websites'))
+
+def get_system_stats(db_path='articles.db'):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    stats = {}
+    
+    # Basic article counts
+    cursor.execute("SELECT COUNT(*) FROM articles")
+    stats['total_articles'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE title IS NULL")
+    stats['pending_downloads'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE title IS NOT NULL")
+    stats['downloaded_articles'] = cursor.fetchone()[0]
+    
+    # Processing status
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE score = 0")
+    stats['unscored_articles'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE rewrite_text IS NULL")
+    stats['unrewritten_articles'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE score IS NOT NULL AND rewrite_text IS NOT NULL")
+    stats['processed_articles'] = cursor.fetchone()[0]
+    
+    # Scoring stats
+    cursor.execute("SELECT AVG(score) FROM articles WHERE score IS NOT NULL")
+    stats['avg_score'] = cursor.fetchone()[0] or 0
+    
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE score > 0")
+    stats['positive_scores'] = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE score < 0")
+    stats['negative_scores'] = cursor.fetchone()[0]
+    
+    # Website stats
+    cursor.execute("SELECT COUNT(*) FROM websites WHERE active = 1")
+    stats['active_websites'] = cursor.fetchone()[0]
+    
+    today = datetime.now().strftime('%Y-%m-%d')
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE date(publish_date) = ?", (today,))
+    stats['articles_today'] = cursor.fetchone()[0]
+    
+    last_48h = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute("SELECT COUNT(*) FROM articles WHERE publish_date > ?", (last_48h,))
+    stats['articles_last_24h'] = cursor.fetchone()[0]
+    
+    # Language distribution
+    stats['language_distribution'] = {}
+    for lang in ['da', 'en']:
+        cursor.execute("""
+            SELECT COUNT(a.id) 
+            FROM articles a 
+            JOIN websites w ON a.base_url LIKE '%' || w.url || '%'
+            WHERE w.language = ?
+        """, (lang,))
+        stats['language_distribution'][lang] = cursor.fetchone()[0]
+    
+    # System health
+    stats['system_healthy'] = (
+        stats['pending_downloads'] < stats['total_articles'] * 0.5 and
+        stats['unscored_articles'] < stats['total_articles'] * 0.3
+    )
+    
+    # Database size
+    stats['db_size'] = f"{os.path.getsize(db_path) / (1024*1024):.2f} MB"
+    
+    conn.close()
+    return stats
+
+@app.route('/status')
+def status():
+    stats = get_system_stats()
+    return render_template('status.html', stats=stats)
 
 def start_flask():
     """Start the Flask app."""

@@ -26,24 +26,33 @@ def score_text(text, scoring_words):
     # Normalize score by text length if necessary
     #if len(tokens) > 0:
     #    total_score /= len(tokens)
-    
     return total_score
 
-
-def score_articles_in_db(db_path='articles.db', rescoring=False):
-    sw = ScoringWords()
-    words = sw.get_words_by_language('da')  # Get Danish words with their weights
-
+def get_website_language(url, db_path='articles.db'):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    articles = []
-    if rescoring:
-        articles = fetch_id_and_text_from_articles()
-    else:
-        articles = fetch_id_and_text_from_articles_with_no_score(db_path)
+    cursor.execute('SELECT language FROM websites WHERE ? LIKE "%" || url || "%"', (url,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else 'da'  # default to Danish if not found
 
-    for article_id, text in articles:
+def score_articles_in_db(db_path='articles.db'):
+    sw = ScoringWords()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT id, text, base_url FROM articles where score = 0')
+    
+    articles = cursor.fetchall()
+
+    for article_id, text, base_url in articles:
+        language = get_website_language(base_url)
+        words = sw.get_words_by_language(language)
         score = score_text(text, words)
+        if score == 0:
+            print('Score is 0 for article with ID:', article_id)
+            score = 0.0001
+        
         cursor.execute('''
             UPDATE articles SET score=? WHERE id=?
         ''', (score, article_id))
@@ -52,4 +61,4 @@ def score_articles_in_db(db_path='articles.db', rescoring=False):
     conn.close()
 
 if __name__ == '__main__':
-    score_articles_in_db(rescoring=True)
+    score_articles_in_db()

@@ -2,6 +2,7 @@
 import sqlite3
 import time
 from datetime import datetime
+from scoring_words import ScoringWords
 
 # Decription of the pipeline
 # ################################################################################################
@@ -14,15 +15,14 @@ from datetime import datetime
 # ################################################################################################
 # each step will run as deamon and will be run in a loop with a sleep time
 
-# website to be scraped and the time to wait between each discovery and downloan request in minutes
-websites = {
-    'https://nyheder.tv2.dk/': 60,  
-    'https://www.dr.dk/nyheder/': 60, 
-    'https://www.bt.dk/': 60,  
-    'https://ekstrabladet.dk/': 60,
-    'https://www.berlingske.dk/': 60,
-    'https://www.version2.dk/': 60  
-}
+# Replace the websites dictionary
+def get_active_websites():
+    sw = ScoringWords()
+    websites = {}
+    for url, refresh_time, language, active in sw.get_all_websites():
+        if active:
+            websites[url] = refresh_time
+    return websites
 
 ### step 1 - discover_articles
 def step_1_discover_articles(base_url):
@@ -52,7 +52,7 @@ def step_3_score_articles():
     #this function scores the articles in the db
     from score_text import score_articles_in_db
     print('Scoring articles')
-    score_articles_in_db(rescoring=True)
+    score_articles_in_db()
 
 
 ### step 4 - rewrite_articles
@@ -64,6 +64,7 @@ def step_4_deamon_rewrite_articles():
 
 def run_pipeline():
     while True:
+        websites = get_active_websites()
         for base_url, wait_time in websites.items():
             print(f'Discovering articles for {base_url}')
             step_1_discover_articles(base_url)
@@ -85,7 +86,7 @@ def fetch_urls_for_download(db_path='articles.db'):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT url FROM articles WHERE title IS NULL
+        SELECT url FROM articles WHERE title IS NULL or title = '' 
     ''')
     urls = [row[0] for row in cursor.fetchall()]
     conn.close()
@@ -128,4 +129,8 @@ def fetch_id_and_text_from_articles_with_no_score(db_path='articles.db'):
 
 
 if __name__ == '__main__':
+    # Initialize websites if running for the first time
+    sw = ScoringWords()
+    if not sw.get_all_websites():
+        sw.populate_sample_websites()
     run_pipeline()
