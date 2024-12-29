@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Management</title>
+    <style>
+        body {
+            padding: 2px;
+        }
+
+        .form-section {
+            margin: 2px 0;
+            padding: 2px;
+            border: 1px solid #ccc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 2px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .button {
+            padding: 5px 1px;
+            margin: 5px;
+        }
+    </style>
+    <script>
+        async function translateText() {
+            const danishWord = document.getElementById('word_da').value;
+            if (!danishWord) return;
+
+            try {
+                const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=da&tl=en&dt=t&q=${encodeURIComponent(danishWord)}`);
+                const data = await response.json();
+                const translation = data[0][0][0];
+                document.getElementById('word_en').value = translation;
+                lowerCaseTranslation = translation.toLowerCase();
+            } catch (error) {
+                console.error('Translation error:', error);
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Word Management</h1>
+    <div class="button-container">
+        <a href="/" class="button">Back to Articles</a>
+        <a href="/negative" class="button">View Negative Scored Articles</a>
+        <button class="button" onclick="recalculateAllScores()">Recalculate All Scores</button>
+    </div>
+    <script>
+        async function recalculateAllScores() {
+            const button = document.querySelector('button[onclick="recalculateAllScores()"]');
+            button.disabled = true;
+            button.textContent = 'Recalculating...';
+            
+            try {
+                const response = await fetch('/recalculate-scores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Scores recalculated successfully!');
+                    location.reload(); // Refresh the page to show updated scores
+                } else {
+                    alert('Failed to recalculate scores. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while recalculating scores.');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Recalculate All Scores';
+            }
+        }
+    </script>
+
+    <div class="form-section">
+        <h2>Add New Word</h2>
+        <form action="/words/add" method="POST">
+            <input type="text" id="word_da" name="word_da" placeholder="Danish Word" required
+                onchange="translateText()">
+            <input type="text" id="word_en" name="word_en" placeholder="English Word" required>
+            <input type="number" name="weight" placeholder="Weight" step="0.1" required>
+            <button type="submit">Add Word</button>
+        </form>
+    </div>
+
+    <h2>Word List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Danish</th>
+                <th>English</th>
+                <th>Weight</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for word_da, word_en, weight, category in words %}
+            <tr>
+                <td>{{ word_da }}</td>
+                <td>{{ word_en }}</td>
+                <td>{{ weight }}</td>
+                <td>{{ category }}</td>
+                <td>
+                    <form action="/words/delete" method="POST" style="display: inline;">
+                        <input type="hidden" name="word_da" value="{{ word_da }}">
+                        <input type="hidden" name="word_en" value="{{ word_en }}">
+                        <button type="submit" class="button">Delete</button>
+                    </form>
+                    <form action="/words/update" method="POST" style="display: inline;">
+                        <input type="hidden" name="word_da" value="{{ word_da }}">
+                        <input type="hidden" name="word_en" value="{{ word_en }}">
+                        <input type="number" name="new_weight" step="0.1" placeholder="New Weight" required>
+                        <button type="submit" class="button">Update Weight</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+
+</html>

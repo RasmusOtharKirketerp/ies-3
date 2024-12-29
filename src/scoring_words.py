@@ -23,10 +23,11 @@ class ScoringWords:
         conn.commit()
         conn.close()
 
-    def add_word(self, word_da: str, word_en: str, weight: float, category: str = None) -> bool:
+    def add_word(self, word_da: str, word_en: str, weight: float, category: str = "user-word") -> bool:
         word_da = self._clean_word(word_da)
         word_en = self._clean_word(word_en)
         try:
+            category = category.lower()
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute('''
@@ -38,6 +39,14 @@ class ScoringWords:
             return True
         except sqlite3.IntegrityError:
             return False
+        
+    def get_all_user_words(self) -> List[Tuple]:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT word_da, word_en, weight, category FROM scoring_words WHERE category="user-word"')
+        words = cursor.fetchall()
+        conn.close()
+        return words
 
     def get_all_words(self) -> List[Tuple]:
         conn = sqlite3.connect(self.db_path)
@@ -98,12 +107,12 @@ class ScoringWords:
 
     def populate_sample_words(self):
         sample_words = [
-            ("krig", "war", -0.8, "conflict"),
-            ("fred", "peace", 0.6, "harmony"),
-            ("død", "death", -0.7, "negative"),
-            ("kærlighed", "love", 0.8, "positive"),
-            ("had", "hate", -0.6, "negative"),
-            ("glæde", "joy", 0.7, "positive")
+            ("krig", "war", -0.8, "user-word"),
+            ("fred", "peace", 0.6, "user-word"),
+            ("død", "death", -0.7, "user-word"),
+            ("kærlighed", "love", 0.8, "user-word"),
+            ("had", "hate", -0.6, "user-word"),
+            ("glæde", "joy", 0.7, "user-word")
         ]
         for word in sample_words:
             self.add_word(word[0], word[1], word[2], word[3])
@@ -126,7 +135,7 @@ class ScoringWords:
                         weight = -99999
                         
                         # Try to add the word pair
-                        if self.add_word(word_da, word_en, weight):
+                        if self.add_word(word_da, word_en, weight, 'translation-cache'):
                             count += 1
                             
                 return count
