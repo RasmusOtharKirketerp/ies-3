@@ -1,12 +1,13 @@
 import tqdm
 import sqlite3
+import os
 from typing import List, Tuple
 
 class ScoringWords:
-    def __init__(self, db_path: str = 'articles.db'):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        self.db_path = db_path or os.getenv('DB_PATH', 'articles.db')
         self._create_table()
-        self._create_websites_table()  # Add this line
+        self._create_websites_table()
 
     def _create_table(self):
         conn = sqlite3.connect(self.db_path)

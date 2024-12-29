@@ -5,22 +5,28 @@ from datetime import datetime, timedelta
 from scoring_words import ScoringWords
 import os
 
+# Get environment variables
+PORT = int(os.getenv('PORT', 1910))
+HOST = os.getenv('HOST', '0.0.0.0')
+DB_PATH = os.getenv('DB_PATH', 'articles.db')
+USER_ID = os.getenv('USER_ID', 'default')
+
 app = Flask(__name__)
 
-scoring_words = ScoringWords()
+scoring_words = ScoringWords(db_path=DB_PATH)
 
-def get_articles(db_path='articles.db', limit=10):
-    
-    conn = sqlite3.connect(db_path)
+# Update all database functions to use DB_PATH
+def get_articles(limit=10):
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""SELECT title, rewrite_text, top_image, url, base_url, score, publish_date FROM articles WHERE rewrite_text > '' ORDER BY score DESC LIMIT ?""", (limit,))
     articles = cursor.fetchall()
     conn.close()
     return articles
 
-def get_todays_articles(db_path='articles.db', limit=10):
+def get_todays_articles(limit=10):
     today = datetime.now().strftime('%Y-%m-%d')
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""SELECT title, rewrite_text, top_image, url, base_url, score, publish_date FROM articles WHERE rewrite_text > '' AND date(publish_date) = date(?) ORDER BY score DESC LIMIT ?""", (today, limit))
     articles = cursor.fetchall()
@@ -28,8 +34,8 @@ def get_todays_articles(db_path='articles.db', limit=10):
 
     return articles
 
-def get_original_articles(db_path='articles.db', limit=10):
-    conn = sqlite3.connect(db_path)
+def get_original_articles(limit=10):
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
         SELECT title, text, top_image, url, base_url, score, publish_date 
@@ -41,8 +47,8 @@ def get_original_articles(db_path='articles.db', limit=10):
     conn.close()
     return articles
 
-def get_negative_scored_articles(db_path='articles.db', limit=100):
-    conn = sqlite3.connect(db_path)
+def get_negative_scored_articles(limit=100):
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
         SELECT title, text, top_image, url, base_url, score, publish_date 
@@ -147,8 +153,8 @@ def delete_website():
     scoring_words.delete_website(url)
     return redirect(url_for('websites'))
 
-def get_system_stats(db_path='articles.db'):
-    conn = sqlite3.connect(db_path)
+def get_system_stats():
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     stats = {}
@@ -213,7 +219,7 @@ def get_system_stats(db_path='articles.db'):
     )
     
     # Database size
-    stats['db_size'] = f"{os.path.getsize(db_path) / (1024*1024):.2f} MB"
+    stats['db_size'] = f"{os.path.getsize(DB_PATH) / (1024*1024):.2f} MB"
     
     conn.close()
     return stats
@@ -224,12 +230,10 @@ def status():
     return render_template('status.html', stats=stats)
 
 def start_flask():
-    """Start the Flask app."""
-    #app.run(debug=True, use_reloader=True)
-    app.run(host="0.0.0.0", port=1910, debug=True)
+    """Start the Flask app with environment variables."""
+    print(f"Starting Flask app for user {USER_ID} on {HOST}:{PORT}")
+    app.run(host=HOST, port=PORT, debug=True)
 
 
 if __name__ == '__main__':
-    
-    # Start the Flask app on
     start_flask()
