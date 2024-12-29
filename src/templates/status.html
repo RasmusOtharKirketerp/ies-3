@@ -5,52 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Status</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            padding: 20px;
-            font-family: Arial, sans-serif;
-        }
-
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
         .stat-card {
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 8px;
-            background: #f9f9f9;
+            height: 100%;
         }
 
         .stat-value {
             font-size: 24px;
             font-weight: bold;
-            color: #2c3e50;
         }
 
         .stat-label {
-            color: #7f8c8d;
-            height: 30px;
-        }
-
-        .error {
-            color: #e74c3c;
-        }
-
-        .success {
-            color: #27ae60;
-        }
-
-        .warning {
-            color: #f39c12;
-        }
-
-        .refresh-button {
-            padding: 10px 20px;
-            margin: 20px 0;
-            cursor: pointer;
+            color: #6c757d;
         }
     </style>
     <script>
@@ -62,81 +29,96 @@
     </script>
 </head>
 
-<body>
-    <h1>System Status</h1>
-    <button onclick="refreshStats()" class="refresh-button">Refresh Stats</button>
-    <div class="stats-container">
-        <div class="stat-card">
-            <h3>Articles Overview</h3>
-            <div class="stat-value">{{ stats.downloaded_articles }}</div>
-            <div class="stat-label">Downloaded Articles</div>
+<body class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>System Status</h1>
+        <button onclick="refreshStats()" class="btn btn-primary">Refresh Stats</button>
+    </div>
 
-            <div class="stat-value">{{ stats.processed_articles }}</div>
-            <div class="stat-label">Fully Processed Articles</div>
-
-
-            <div class="stat-value">{{ stats.total_articles }}</div>
-            <div class="stat-label">Total Articles</div>
-
-        </div>
-
-        <div class="stat-card">
-            <h3>Processing Status</h3>
-
-            <div class="stat-value {{ 'warning' if stats.pending_downloads > 0 else 'success' }}">{{
-                stats.pending_downloads }}</div>
-            <div class="stat-label">Pending Downloads</div>
-
-
-            <div class="stat-value {{ 'warning' if stats.unrewritten_articles > 0 else 'success' }}">{{
-                stats.unrewritten_articles }}</div>
-            <div class="stat-label">Unrewritten Articles</div>
-
-            <div class="stat-value {{ 'warning' if stats.unscored_articles > 0 else 'success' }}">{{
-                stats.unscored_articles }}</div>
-            <div class="stat-label">Unscored Articles</div>
-
-
-        </div>
-
-        <div class="stat-card">
-            <h3>Scoring Stats</h3>
-            <div class="stat-value">{{ "%.2f"|format(stats.avg_score) }}</div>
-            <div class="stat-label">Average Score</div>
-            <div class="stat-value">{{ stats.positive_scores }}</div>
-            <div class="stat-label">Positive Scored Articles</div>
-            <div class="stat-value">{{ stats.negative_scores }}</div>
-            <div class="stat-label">Negative Scored Articles</div>
-        </div>
-
-        <div class="stat-card">
-            <h3>Website Stats</h3>
-            <div class="stat-value">{{ stats.active_websites }}</div>
-            <div class="stat-label">Active Websites</div>
-            <div class="stat-value">{{ stats.articles_today }}</div>
-            <div class="stat-label">Articles Today</div>
-            <div class="stat-value">{{ stats.articles_last_24h }}</div>
-            <div class="stat-label">Articles Last 48h</div>
-        </div>
-
-        <div class="stat-card">
-            <h3>Language Distribution</h3>
-            {% for lang, count in stats.language_distribution.items() %}
-            <div class="stat-value">{{ count }}</div>
-            <div class="stat-label">{{ lang.upper() }} Articles</div>
-            {% endfor %}
-        </div>
-
-        <div class="stat-card">
-            <h3>System Health</h3>
-            <div class="stat-value {{ 'success' if stats.system_healthy else 'error' }}">
-                {{ "Healthy" if stats.system_healthy else "Work in progress..." }}
+    <div class="row g-4">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="card-title">Articles Overview</h3>
+                    <div class="stat-value text-primary">{{ stats.total_articles }}</div>
+                    <div class="stat-label">Total Articles</div>
+                    <div class="stat-value text-warning">{{ stats.pending_downloads }}</div>
+                    <div class="stat-label">Pending Downloads</div>
+                    <div class="stat-value text-success">{{ stats.downloaded_articles }}</div>
+                    <div class="stat-label">Downloaded Articles</div>
+                </div>
             </div>
-            <div class="stat-label">System Status</div>
-            <div class="stat-value">{{ stats.db_size }}</div>
-            <div class="stat-label">Database Size</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="card-title">Processing Status</h3>
+                    <div class="stat-value text-warning">{{ stats.pending_downloads }}</div>
+                    <div class="stat-label">Pending Downloads</div>
+                    <div class="stat-value text-warning">{{ stats.unrewritten_articles }}</div>
+                    <div class="stat-label">Unrewritten Articles</div>
+                    <div class="stat-value text-warning">{{ stats.unscored_articles }}</div>
+                    <div class="stat-label">Unscored Articles</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="card-title">Scoring Stats</h3>
+                    <div class="stat-value text-primary">{{ "%.2f"|format(stats.avg_score) }}</div>
+                    <div class="stat-label">Average Score</div>
+                    <div class="stat-value text-success">{{ stats.positive_scores }}</div>
+                    <div class="stat-label">Positive Scored Articles</div>
+                    <div class="stat-value text-danger">{{ stats.negative_scores }}</div>
+                    <div class="stat-label">Negative Scored Articles</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="card-title">Website Stats</h3>
+                    <div class="stat-value text-primary">{{ stats.active_websites }}</div>
+                    <div class="stat-label">Active Websites</div>
+                    <div class="stat-value text-primary">{{ stats.articles_today }}</div>
+                    <div class="stat-label">Articles Today</div>
+                    <div class="stat-value text-primary">{{ stats.articles_last_24h }}</div>
+                    <div class="stat-label">Articles Last 48h</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="card-title">Language Distribution</h3>
+                    {% for lang, count in stats.language_distribution.items() %}
+                    <div class="stat-value text-primary">{{ count }}</div>
+                    <div class="stat-label">{{ lang.upper() }} Articles</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="card-title">System Health</h3>
+                    <div class="stat-value {{ 'text-success' if stats.system_healthy else 'text-danger' }}">
+                        {{ "Healthy" if stats.system_healthy else "Work in progress..." }}
+                    </div>
+                    <div class="stat-label">System Status</div>
+                    <div class="stat-value text-primary">{{ stats.db_size }}</div>
+                    <div class="stat-label">Database Size</div>
+                </div>
+            </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

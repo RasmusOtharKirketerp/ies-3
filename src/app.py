@@ -225,10 +225,11 @@ def status():
 
 def start_flask():
     """Start the Flask app."""
-    app.run(debug=True, use_reloader=True)
+    #app.run(debug=True, use_reloader=True)
+    app.run(host="0.0.0.0", port=1910, debug=True)
 
 
 if __name__ == '__main__':
     
-    # Start the Flask app
+    # Start the Flask app on
     start_flask()
