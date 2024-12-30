@@ -224,7 +224,7 @@ if __name__ == '__main__':
           ]
 
 
-  articles10 = fetch_id_and_text_from_articles(db_path='articles.db', limit=10)
+  articles10 = fetch_id_and_text_from_articles(db_path, limit=10)
   for article in articles10:
       article_id, text = article
       score = score_text_using_vector(text, words, weights, 'da')

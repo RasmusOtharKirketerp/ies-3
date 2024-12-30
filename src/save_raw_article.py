@@ -1,6 +1,6 @@
 import sqlite3
 
-def drop_table_article (db_path='articles.db'):
+def drop_table_article (db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
@@ -10,28 +10,36 @@ def drop_table_article (db_path='articles.db'):
     conn.commit()
     conn.close()
 
-def prepare_db(db_path='articles.db'):
+def prepare_db(db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS articles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            base_url TEXT NOT NULL,
-            url TEXT UNIQUE,
-            title TEXT  DEFAULT NULL,
-            authors TEXT DEFAULT NULL,
-            publish_date TEXT ,
-            text TEXT DEFAULT NULL,
+            url TEXT NOT NULL,
+            title TEXT,
+            authors TEXT,
+            publish_date TEXT,
+            text TEXT,
             top_image TEXT,
-            score INTEGER DEFAULT 0,
-            rewrite_text TEXT DEFAULT NULL
+            base_url TEXT,
+            score REAL,
+            rewrite_text TEXT
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS websites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT NOT NULL UNIQUE,
+            refresh_time INTEGER NOT NULL,
+            language TEXT NOT NULL,
+            active BOOLEAN DEFAULT 1
         )
     ''')
     conn.commit()
     conn.close()
-    return conn
 
-def delete_all_articles(db_path='articles.db'):
+def delete_all_articles(db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
@@ -40,7 +48,7 @@ def delete_all_articles(db_path='articles.db'):
     conn.commit()
     conn.close()
 
-def store_urls(base_url, urls, db_path='articles.db'):
+def store_urls(base_url, urls, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     for url in urls:
@@ -51,7 +59,7 @@ def store_urls(base_url, urls, db_path='articles.db'):
     conn.commit()
     conn.close()
 
-def update_article(article_data, db_path='articles.db'):
+def update_article(article_data, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
@@ -68,7 +76,7 @@ def update_article(article_data, db_path='articles.db'):
     conn.close()
 
 
-def store_article(base_url, article_data, db_path='articles.db'):
+def store_article(base_url, article_data, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''

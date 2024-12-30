@@ -1,19 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
-from pipeline_helper import run_pipeline, step_3_score_articles
+from save_raw_article import prepare_db
 from datetime import datetime, timedelta
 from scoring_words import ScoringWords
 import os
 
-# Get environment variables
-PORT = int(os.getenv('PORT', 1910))
-HOST = os.getenv('HOST', '0.0.0.0')
-DB_PATH = os.getenv('DB_PATH', 'articles.db')
-USER_ID = os.getenv('USER_ID', 'default')
-
 app = Flask(__name__)
-
-scoring_words = ScoringWords(db_path=DB_PATH)
 
 # Update all database functions to use DB_PATH
 def get_articles(limit=10):
@@ -31,7 +23,6 @@ def get_todays_articles(limit=10):
     cursor.execute("""SELECT title, rewrite_text, top_image, url, base_url, score, publish_date FROM articles WHERE rewrite_text > '' AND date(publish_date) = date(?) ORDER BY score DESC LIMIT ?""", (today, limit))
     articles = cursor.fetchall()
     conn.close()
-
     return articles
 
 def get_original_articles(limit=10):
@@ -74,32 +65,32 @@ def recalculate_scores():
 
 def recalculate_all_scores():
     from score_text import score_articles_in_db
-    score_articles_in_db()
+    score_articles_in_db(DB_PATH)
 
 @app.route('/')
 def index():
     articles = get_articles(limit=100)
-    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon)
+    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon, user_id=USER_ID)
 
 @app.route('/today')
 def today():
     articles = get_todays_articles(limit=100)
-    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon)
+    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon, user_id=USER_ID)
 
 @app.route('/original')
 def original():
     articles = get_original_articles(limit=100)
-    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon)
+    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon, user_id=USER_ID)
 
 @app.route('/negative')
 def negative():
     articles = get_negative_scored_articles()
-    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon)
+    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon, user_id=USER_ID)
 
 @app.route('/words')
 def words():
     all_words = scoring_words.get_all_user_words()
-    return render_template('words.html', words=all_words)
+    return render_template('words.html', words=all_words, user_id=USER_ID)
 
 @app.route('/words/add', methods=['POST'])
 def add_word():
@@ -130,7 +121,7 @@ def update_word():
 @app.route('/websites')
 def websites():
     all_websites = scoring_words.get_all_websites()
-    return render_template('websites.html', websites=all_websites)
+    return render_template('websites.html', websites=all_websites, user_id=USER_ID)
 
 @app.route('/websites/add', methods=['POST'])
 def add_website():
@@ -227,13 +218,28 @@ def get_system_stats():
 @app.route('/status')
 def status():
     stats = get_system_stats()
-    return render_template('status.html', stats=stats)
+    return render_template('status.html', stats=stats, user_id=USER_ID)
 
 def start_flask():
     """Start the Flask app with environment variables."""
     print(f"Starting Flask app for user {USER_ID} on {HOST}:{PORT}")
     app.run(host=HOST, port=PORT, debug=True)
 
-
 if __name__ == '__main__':
+    # get database path from start parameters
+    import sys
+    if len(sys.argv) < 3:
+        print("Usage: python app.py <db_path> <port> <user_id>")
+        sys.exit(1)
+    HOST = '192.168.86.67'
+    DB_PATH = sys.argv[1]
+    PORT = sys.argv[2] 
+    USER_ID = sys.argv[3] 
+    print(f"Starting app with db_path={DB_PATH}, port={PORT}, user_id={USER_ID}")
+
+    scoring_words = ScoringWords(db_path=DB_PATH)
+
+    # Prepare the database
+    prepare_db(DB_PATH)
+
     start_flask()

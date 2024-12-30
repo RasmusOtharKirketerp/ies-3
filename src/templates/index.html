@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width: device-width, initial-scale=1.0">
-    <title>Rasmus news portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user_id }}-NewsRoom</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .article-card {
@@ -40,7 +40,7 @@
 </head>
 
 <body class="container-fluid">
-    <h1 class="mt-4">Rasmus news portal</h1>
+    <h1 class="mt-4">{{ user_id }}-NewsRoom</h1>
     <div class="button-container mb-4">
         <a href="/"><button class="btn btn-primary me-2 mb-2">All Articles</button></a>
         <a href="/today"><button class="btn btn-primary me-2 mb-2">Today's Articles</button></a>
@@ -68,8 +68,8 @@
                             <div class="article-meta">
                                 <img src="{{ get_google_favicon(base_url) }}" alt="Favicon" class="favicon">
                                 <small class="text-muted">{{ publish_date }}</small>
-                                <span class="badge bg-{{ 'success' if score > 0 else 'danger' }}">
-                                    Score: {{ "%.2f"|format(score) }}
+                                <span class="badge bg-{{ 'success' if score is not none and score > 0 else 'danger' }}">
+                                    Score: {{ "%.2f"|format(score) if score is not none else "N/A" }}
                                 </span>
                             </div>
                             <p class="card-text">{{ text }}</p>

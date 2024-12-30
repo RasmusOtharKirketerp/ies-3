@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  news-portal-rasmus:
+    build: .
+    ports:
+      - "1910:1910"
+    environment:
+      - PORT=1910
+      - DB_PATH=/app/data/articles_rasmus.db
+      - USER_ID=Rasmus
+    volumes:
+      - ./data/rasmus:/app/data
+
+  news-portal-mette:
+    build: .
+    ports:
+      - "1911:1911"
+    environment:
+      - PORT=1911
+      - DB_PATH=/app/data/articles_mette.db
+      - USER_ID=Mette
+    volumes:
+      - ./data/mette:/app/data

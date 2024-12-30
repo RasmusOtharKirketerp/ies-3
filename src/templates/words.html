@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Management</title>
+    <title>{{ user_id }}-NewsRoom Word Management</title>
     <style>
         body {
             padding: 2px;
@@ -56,9 +56,9 @@
 </head>
 
 <body>
-    <h1>Word Management</h1>
+    <h1>{{ user_id }}-NewsRoom Word Management</h1>
     <div class="button-container">
-        <a href="/" class="button">Back to Articles</a>
+        <a href="/" class="button">Back to Main Page</a>
         <a href="/negative" class="button">View Negative Scored Articles</a>
         <button class="button" onclick="recalculateAllScores()">Recalculate All Scores</button>
     </div>

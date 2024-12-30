@@ -1,7 +1,9 @@
 # prompt.py
-import ollama
+from ollama import Client
+
 # Define the model and the message
 model_name = 'mistral'  # Replace with your desired model
+ollama_base_url = "http://127.0.0.1:11434"
 
 def generate_summary_prompt(article_text):
     """
@@ -21,9 +23,7 @@ def generate_summary_prompt(article_text):
     ### Steps:
     1. Read and understand the article’s main points.
     2. Identify any clickbait or exaggerated phrases (e.g., "You won't believe," "shocking," "top secrets revealed") and remove or replace them with straightforward language.
-    3. identify the language the aricle is written in and maintain this lauguage in reply.
-
-
+    3. Identify the language the article is written in and maintain this language in reply.
 
     ### Article Text:
     {article}
@@ -43,10 +43,12 @@ def generate_summary_prompt(article_text):
     
     return prompt_with_article
 
-def rewrite_text(str):
-    str = generate_summary_prompt(str)
-    messages = [{'role': 'user', 'content': str}]
+def rewrite_text(article_text):
+    prompt = generate_summary_prompt(article_text)
+    messages = [{'role': 'user', 'content': prompt}]
+    ollama = Client(ollama_base_url)  # Uses default configuration, which should point to 127.0.0.1:11434
     response = ollama.chat(model=model_name, messages=messages)
+    
     return response['message']['content']
 
 # Example usage

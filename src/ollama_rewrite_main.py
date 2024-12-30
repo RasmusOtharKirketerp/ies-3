@@ -22,7 +22,7 @@ def fetch_id_and_text_from_articles_with_no_rewrite_text(db_path):
     conn.close()
     return articles
 
-def  rewrite_text_in_db(db_path='articles.db'):
+def  rewrite_text_in_db(db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 

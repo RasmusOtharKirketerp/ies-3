@@ -4,8 +4,8 @@ import os
 from typing import List, Tuple
 
 class ScoringWords:
-    def __init__(self, db_path: str = None):
-        self.db_path = db_path or os.getenv('DB_PATH', 'articles.db')
+    def __init__(self, db_path):
+        self.db_path = db_path
         self._create_table()
         self._create_websites_table()
 
@@ -216,35 +216,6 @@ class ScoringWords:
         websites = {
             'https://nyheder.tv2.dk/': ('da', 60),
             'https://www.dr.dk/nyheder/': ('da', 60),
-            'https://cnn.com/': ('en', 60),
-            'https://www.bt.dk/': ('da', 60),
-            'https://ekstrabladet.dk/': ('da', 60),
-            'https://www.berlingske.dk/': ('da', 60),
-            'https://www.version2.dk/': ('da', 60),
-            'https://www.computerworld.dk/': ('da', 60),
         }
         for url, (lang, refresh) in websites.items():
             self.add_website(url, refresh, lang)
-
-if __name__ == '__main__':
-    scoring_words = ScoringWords()
-    scoring_words.populate_sample_words()
-    words = scoring_words.get_all_words()
-    print(words)
-    words_da = scoring_words.get_words_by_language('da')
-    print(words_da)
-    words_en = scoring_words.get_words_by_language('en')
-    print(words_en)
-    scoring_words.update_weight('krig', 'war', -0.9)
-    words = scoring_words.get_all_words()
-    print(words)
-    scoring_words.delete_word('krig', 'war')
-    words = scoring_words.get_all_words()
-    print(words)
-    #add all words from translation_cache1000.json with wiehgts of 0.5
-    scoring_words.import_from_translation_cache()
-    scoring_words.populate_sample_websites()
-    websites = scoring_words.get_all_websites()
-    print(websites)
-
-

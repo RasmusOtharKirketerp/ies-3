@@ -28,7 +28,7 @@ def score_text(text, scoring_words):
     #    total_score /= len(tokens)
     return total_score
 
-def get_website_language(url, db_path='articles.db'):
+def get_website_language(url, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT language FROM websites WHERE ? LIKE "%" || url || "%"', (url,))
@@ -36,17 +36,17 @@ def get_website_language(url, db_path='articles.db'):
     conn.close()
     return result[0] if result else 'da'  # default to Danish if not found
 
-def score_articles_in_db(db_path='articles.db'):
-    sw = ScoringWords()
+def score_articles_in_db(db_path):
+    sw = ScoringWords(db_path)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
-    cursor.execute('SELECT id, text, base_url FROM articles where score = 0')
+    cursor.execute('SELECT id, text, base_url FROM articles where score IS NULL')
     
     articles = cursor.fetchall()
 
     for article_id, text, base_url in articles:
-        language = get_website_language(base_url)
+        language = get_website_language(base_url, db_path)
         words = sw.get_words_by_language(language)
         score = score_text(text, words)
         if score == 0:
@@ -61,4 +61,4 @@ def score_articles_in_db(db_path='articles.db'):
     conn.close()
 
 if __name__ == '__main__':
-    score_articles_in_db()
+    score_articles_in_db('data/articles.db')
