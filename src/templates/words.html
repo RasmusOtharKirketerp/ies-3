@@ -5,38 +5,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ user_id }}-NewsRoom Word Management</title>
-    <style>
-        body {
-            padding: 2px;
-        }
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
 
-        .form-section {
-            margin: 2px 0;
-            padding: 2px;
-            border: 1px solid #ccc;
-        }
+<body class="container-fluid py-4">
+    <h1 class="mb-4">{{ user_id }}-NewsRoom Word Management</h1>
+    <div class="mb-4">
+        <a href="/" class="btn btn-primary">Back to Main Page</a>
+        <a href="/negative" class="btn btn-primary">View Negative Scored Articles</a>
+        <button class="btn btn-primary" onclick="recalculateAllScores()">Recalculate All Scores</button>
+    </div>
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title">Add New Word</h2>
+            <form action="/words/add" method="POST" class="row g-3">
+                <div class="col-12 col-md-4">
+                    <input type="text" id="word_da" name="word_da" class="form-control" placeholder="Danish Word" required onchange="translateText()">
+                </div>
+                <div class="col-12 col-md-4">
+                    <input type="text" id="word_en" name="word_en" class="form-control" placeholder="English Word" required>
+                </div>
+                <div class="col-12 col-md-2">
+                    <input type="number" name="weight" class="form-control" placeholder="Weight" step="0.1" required>
+                </div>
+                <div class="col-12 col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Add Word</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        th,
-        td {
-            padding: 2px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
+    <h2>Word List</h2>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Danish</th>
+                    <th>English</th>
+                    <th>Weight</th>
+                    <th>Category</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for word_da, word_en, weight, category in words %}
+                <tr>
+                    <td>{{ word_da }}</td>
+                    <td>{{ word_en }}</td>
+                    <td>{{ weight }}</td>
+                    <td>{{ category }}</td>
+                    <td>
+                        <form action="/words/delete" method="POST" class="d-inline">
+                            <input type="hidden" name="word_da" value="{{ word_da }}">
+                            <input type="hidden" name="word_en" value="{{ word_en }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                        <form action="/words/update" method="POST" class="d-inline">
+                            <input type="hidden" name="word_da" value="{{ word_da }}">
+                            <input type="hidden" name="word_en" value="{{ word_en }}">
+                            <input type="number" name="new_weight" class="form-control d-inline-block w-auto" step="0.1" placeholder="New Weight" required>
+                            <button type="submit" class="btn btn-primary btn-sm">Update Weight</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-        th {
-            background-color: #f4f4f4;
-        }
-
-        .button {
-            padding: 5px 1px;
-            margin: 5px;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         async function translateText() {
             const danishWord = document.getElementById('word_da').value;
@@ -47,27 +85,16 @@
                 const data = await response.json();
                 const translation = data[0][0][0];
                 document.getElementById('word_en').value = translation;
-                lowerCaseTranslation = translation.toLowerCase();
             } catch (error) {
                 console.error('Translation error:', error);
             }
         }
-    </script>
-</head>
 
-<body>
-    <h1>{{ user_id }}-NewsRoom Word Management</h1>
-    <div class="button-container">
-        <a href="/" class="button">Back to Main Page</a>
-        <a href="/negative" class="button">View Negative Scored Articles</a>
-        <button class="button" onclick="recalculateAllScores()">Recalculate All Scores</button>
-    </div>
-    <script>
         async function recalculateAllScores() {
             const button = document.querySelector('button[onclick="recalculateAllScores()"]');
             button.disabled = true;
             button.textContent = 'Recalculating...';
-            
+
             try {
                 const response = await fetch('/recalculate-scores', {
                     method: 'POST',
@@ -75,7 +102,7 @@
                         'Content-Type': 'application/json',
                     }
                 });
-                
+
                 if (response.ok) {
                     alert('Scores recalculated successfully!');
                     location.reload(); // Refresh the page to show updated scores
@@ -91,53 +118,6 @@
             }
         }
     </script>
-
-    <div class="form-section">
-        <h2>Add New Word</h2>
-        <form action="/words/add" method="POST">
-            <input type="text" id="word_da" name="word_da" placeholder="Danish Word" required
-                onchange="translateText()">
-            <input type="text" id="word_en" name="word_en" placeholder="English Word" required>
-            <input type="number" name="weight" placeholder="Weight" step="0.1" required>
-            <button type="submit">Add Word</button>
-        </form>
-    </div>
-
-    <h2>Word List</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Danish</th>
-                <th>English</th>
-                <th>Weight</th>
-                <th>Category</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for word_da, word_en, weight, category in words %}
-            <tr>
-                <td>{{ word_da }}</td>
-                <td>{{ word_en }}</td>
-                <td>{{ weight }}</td>
-                <td>{{ category }}</td>
-                <td>
-                    <form action="/words/delete" method="POST" style="display: inline;">
-                        <input type="hidden" name="word_da" value="{{ word_da }}">
-                        <input type="hidden" name="word_en" value="{{ word_en }}">
-                        <button type="submit" class="button">Delete</button>
-                    </form>
-                    <form action="/words/update" method="POST" style="display: inline;">
-                        <input type="hidden" name="word_da" value="{{ word_da }}">
-                        <input type="hidden" name="word_en" value="{{ word_en }}">
-                        <input type="number" name="new_weight" step="0.1" placeholder="New Weight" required>
-                        <button type="submit" class="button">Update Weight</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </body>
 
 </html>
