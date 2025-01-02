@@ -4,3 +4,5 @@
 /__pycache__/*
 src/__pycache__/*
 *.db
+src/__pycache__/discover_articles.cpython-311.pyc
+src/__pycache__/score_text.cpython-311.pyc

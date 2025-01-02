@@ -1,4 +1,5 @@
 from newspaper import build
+from utils import EXCLUDE_URLS
 
 def discover_articles(base_url):
     # Build the newspaper source
@@ -6,6 +7,11 @@ def discover_articles(base_url):
     
     # Filter articles to include only those starting with base_url
     article_urls = [article.url for article in paper.articles if article.url.startswith(base_url)]
+
+    #exclude this URL from article_urls "https://www.dr.dk/nyheder/seneste" and "https://nyheder.tv2.dk/seneste"
+    # Exclude URLs from the EXCLUDE_URLS list
+    article_urls = [url for url in article_urls if url not in EXCLUDE_URLS]
+
     
     return article_urls
 

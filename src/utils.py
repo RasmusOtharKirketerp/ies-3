@@ -5,6 +5,9 @@ import db_layer
 #CONSTANTS
 PATH_TO_SHARE_DB = 'share_articles.db'
 
+#These URL contains a list of latest news and should be excluded, because they changes all the time
+EXCLUDE_URLS = ["https://www.dr.dk/nyheder/seneste", "https://nyheder.tv2.dk/seneste"]
+
 def convert_article_from_db_to_newspaper_article(articleDB):
     new_article = Article(articleDB[1])
     new_article.title = articleDB[2]

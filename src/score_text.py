@@ -34,15 +34,14 @@ def score_articles_in_db(db_path):
         
     articles = db_layer.fecth_all_id_and_text_and_base_url(db_path=db_path)
 
-    for article_id, text, base_url in articles:
+    for id, text, base_url in articles:
         language = db_layer.get_website_language(base_url, db_path)
         words = sw.get_words_by_language(language)
         score = score_text(text, words)
         if score == 0:
-            print('Score is 0 for article with ID:', article_id)
             score = 0.0001
         
-        db_layer.update_score_by_id(article_id, score, db_path)
+        db_layer.update_score_by_id(id, score, db_path)
 
 
 if __name__ == '__main__':

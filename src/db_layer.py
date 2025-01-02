@@ -1,9 +1,24 @@
 #db layer for the articles 
 import sqlite3
 
+def delete_excluded_urls_from_db(excluded_urls, db_path):
+    # Connect to the SQLite database
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
 
-#support for the pipeline
-#####################################
+    for url in excluded_urls:
+        # Add a wildcard for all URLs starting with the excluded URL
+        query = '''DELETE FROM articles WHERE url LIKE ?'''
+        print(f"Executing: {query} with parameter: {url + '%'}")  # Debugging
+        
+        cursor.execute(query, (url + '%',))
+        print(f"Rows affected for {url}: {cursor.rowcount}")  # Debugging
+
+
+    # Commit the changes and close the connection
+    conn.commit()
+    conn.close()
+
 def fetch_urls_for_download(db_path):
     #this function fetches the urls of the articles to be downloaded
     #from the database where there are no titles or text
