@@ -1,9 +1,8 @@
-from pipeline_helper import fetch_id_and_text_from_articles, fetch_id_and_text_from_articles_with_no_score
 from scoring_words import ScoringWords
 import sqlite3
-
 import re
 from collections import Counter
+import db_layer
 
 def score_text(text, scoring_words):
     if not text:
@@ -28,37 +27,23 @@ def score_text(text, scoring_words):
     #    total_score /= len(tokens)
     return total_score
 
-def get_website_language(url, db_path):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('SELECT language FROM websites WHERE ? LIKE "%" || url || "%"', (url,))
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else 'da'  # default to Danish if not found
+
 
 def score_articles_in_db(db_path):
     sw = ScoringWords(db_path)
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT id, text, base_url FROM articles where score IS NULL')
-    
-    articles = cursor.fetchall()
+        
+    articles = db_layer.fecth_all_id_and_text_and_base_url(db_path=db_path)
 
     for article_id, text, base_url in articles:
-        language = get_website_language(base_url, db_path)
+        language = db_layer.get_website_language(base_url, db_path)
         words = sw.get_words_by_language(language)
         score = score_text(text, words)
         if score == 0:
             print('Score is 0 for article with ID:', article_id)
             score = 0.0001
         
-        cursor.execute('''
-            UPDATE articles SET score=? WHERE id=?
-        ''', (score, article_id))
-        conn.commit()
+        db_layer.update_score_by_id(article_id, score, db_path)
 
-    conn.close()
 
 if __name__ == '__main__':
     score_articles_in_db('data/articles.db')

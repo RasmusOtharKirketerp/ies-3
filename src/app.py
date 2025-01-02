@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
-from save_raw_article import prepare_db
+from db_layer import prepare_db
 from datetime import datetime, timedelta
 from scoring_words import ScoringWords
 import os

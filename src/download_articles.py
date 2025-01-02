@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 import re
 import time
 
-from save_raw_article import get_cached_articles, chech_if_url_need_download
+from db_layer import get_cached_articles, chech_if_url_need_download
 
 def extract_words_from_url(url):
     # Parse the URL

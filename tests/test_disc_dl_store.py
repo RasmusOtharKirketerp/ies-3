@@ -1,6 +1,6 @@
 import unittest
 from discover_articles import discover_articles
-from downloan_articles import download_article
+from download_articles import download_article
 from save_raw_article import store_article
 import os
 import sqlite3
