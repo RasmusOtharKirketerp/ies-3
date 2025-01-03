@@ -14,9 +14,9 @@ def rewrite_all_nlp():
         id = article[0]
         new_article = utils.convert_article_from_db_to_newspaper_article(article) 
         new_article.nlp()
-        print('*'*50)
-        print(new_article.title)
-        print(new_article.summary)
+        #print('*'*50)
+        #print(new_article.title)
+        #print(new_article.summary)
         db_layer.update_rewrite_text_by_id(id, new_article.summary, utils.PATH_TO_SHARE_DB)
         #print(new_article.keywords)
     

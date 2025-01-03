@@ -321,3 +321,25 @@ def TEST_get_10_articles_with_text(db_path):
     conn.close()
     return articles
 
+def TEST_get_10_fecth_all_id_and_text_and_base_url(db_path):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT id, text, base_url FROM articles WHERE score IS NULL LIMIT 10')
+    
+    articles = cursor.fetchall()
+    conn.close()
+    return articles
+
+def TEST_get_1_fecth_all_id_and_text_and_base_url_from_url(url, db_path):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT id, text, base_url FROM articles WHERE url=? LIMIT 1', (url,))
+    
+    articles = cursor.fetchall()
+    conn.close()
+    return articles
+
+
+

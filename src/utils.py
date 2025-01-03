@@ -4,6 +4,8 @@ import db_layer
 
 #CONSTANTS
 PATH_TO_SHARE_DB = 'share_articles.db'
+PATH_TO_RASMUS_DB = 'rasmus_articles.db'
+PATH_TO_METTE_DB = 'mette_articles.db'
 
 #These URL contains a list of latest news and should be excluded, because they changes all the time
 EXCLUDE_URLS = ["https://www.dr.dk/nyheder/seneste", "https://nyheder.tv2.dk/seneste"]

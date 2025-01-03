@@ -1,26 +1,34 @@
 from scoring_words import ScoringWords
-import sqlite3
 import re
 from collections import Counter
 import db_layer
 
-def score_text(text, scoring_words):
+def score_text(text, scoring_words, debug=False):
     if not text:
         return -100000
     
     # Normalize the text: convert to lowercase and tokenize
     text = text.lower()
     tokens = re.findall(r'\b\w+\b', text)  # Extract words as tokens
+    if debug:
+        print(tokens)
     token_counts = Counter(tokens)  # Count occurrences of each word
+    if debug:
+        print(token_counts)
 
     # Calculate the score
     total_score = 0
     hits = 0
     for word, weight in scoring_words:
-        word = word.lower()  # Ensure case-insensitive matching
-        if word in token_counts:
-            hits += token_counts[word]
-            total_score += float(weight) * token_counts[word]
+        word = word.lower().strip()  # Ensure case-insensitive matching and remove whitespace
+        # Match partial words
+        matching_tokens = [token for token in tokens if word in token]
+        for token in matching_tokens:
+            count = token_counts[token]
+            if debug:
+                print(f"Word '{word}' matched in token '{token}' with weight {weight} and count {count}")
+            hits += count
+            total_score += float(weight) * count
     
     # Normalize score by text length if necessary
     #if len(tokens) > 0:

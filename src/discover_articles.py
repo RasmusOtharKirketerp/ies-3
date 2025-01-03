@@ -10,13 +10,15 @@ def discover_articles(base_url):
 
     #exclude this URL from article_urls "https://www.dr.dk/nyheder/seneste" and "https://nyheder.tv2.dk/seneste"
     # Exclude URLs from the EXCLUDE_URLS list
-    article_urls = [url for url in article_urls if url not in EXCLUDE_URLS]
+    article_urls = [
+        url for url in article_urls if not any(excluded in url for excluded in EXCLUDE_URLS)
+    ]
 
     
     return article_urls
 
 if __name__ == '__main__':
-    base_url = 'https://nyheder.tv2.dk/'
+    base_url = 'https://www.dr.dk/nyheder'
     urls = discover_articles(base_url)
 
     print(urls)
