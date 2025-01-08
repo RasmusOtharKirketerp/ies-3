@@ -49,6 +49,9 @@ def step_2_download_articles(DB_PATH):
         if article_data['title'] == "Download failed":
             print(f"Skipping article {url} due to download failure.")
             continue
+
+
+
         print(f'Updating article: {url}')
         db_layer.update_article(article_data, DB_PATH)
 

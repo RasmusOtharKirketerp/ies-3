@@ -1,5 +1,6 @@
 #db layer for the articles 
 import sqlite3
+from datetime import datetime
 
 def delete_excluded_urls_from_db(excluded_urls, db_path):
     # Connect to the SQLite database
@@ -89,47 +90,49 @@ def store_article(base_url, article_data, db_path):
     conn.close()
 
 
-def update_article(article_data, db_path):
+def update_downloaded_article(article_data, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+    
+    # Ensure publish_date is a datetime object
+    publish_date = article_data['publish_date']
+    if publish_date and not isinstance(publish_date, datetime):
+        try:
+            publish_date = datetime.strptime(publish_date, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            publish_date = datetime.strptime(publish_date, '%Y-%m-%d')
+    
     cursor.execute('''
-        UPDATE articles SET title=?, authors=?, publish_date=?, text=?, top_image=? WHERE url=?
+        UPDATE articles
+        SET title = ?, text = ?, top_image = ?, publish_date = ?
+        WHERE url = ?
     ''', (
         article_data['title'],
-        ', '.join(article_data['authors']),
-        article_data['publish_date'].strftime('%Y-%m-%d') if article_data['publish_date'] else None,
         article_data['text'],
         article_data['top_image'],
-        article_data['url']
+        article_data['publish_date'],
+        article_data['url'],
     ))
+    
     conn.commit()
     conn.close()
 
 
-def chech_if_url_need_download(url, db_path):
+def do_url_need_download(url, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT url FROM articles WHERE url=? and title = ''
+        SELECT id, url FROM articles WHERE url=? and title = ''
     ''', (url,))
     result = cursor.fetchone()
     conn.close()
     if result is None:
-        return False
-    else:
+        print(f"URL {url} not in database, must download to use, returning True")
         return True
-    
-def fetch_urls_for_download(db_path):
-    #this function fetches the urls of the articles to be downloaded
-    #from the database where there are no titles or text
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT url FROM articles WHERE title IS NULL or title = '' 
-    ''')
-    urls = [row[0] for row in cursor.fetchall()]
-    conn.close()
-    return urls
+    else:
+        print(f"URL {url} already in database, skipping, returning False")
+        print(result)
+        return False
     
 def fecth_article_txt_by_id(article_id, db_path):
     #this function fetches the text of the article by the id
@@ -179,7 +182,7 @@ def get_cached_articles(url, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT url, title, authors, publish_date, text, top_image FROM articles WHERE url=? LIMIT 1
+        SELECT id, url, title, authors, publish_date, text, top_image, base_url, score, rewrite_text FROM articles WHERE url=? LIMIT 1
     ''', (url,))
     article = cursor.fetchone()
     conn.close()
@@ -187,12 +190,16 @@ def get_cached_articles(url, db_path):
         return None
     else:
         return {
-            'url': article[0],
-            'title': article[1],
-            'authors': article[2].split(', ') if article[2] else [],
-            'publish_date': article[3],
-            'text': article[4],
-            'top_image': article[5]
+            'id': article[0],
+            'url': article[1],
+            'title': article[2],
+            'authors': article[3].split(', ') if article[2] else [],
+            'publish_date': article[4],
+            'text': article[5],
+            'top_image': article[6],
+            'base_url': article[7],
+            'score': article[8],
+            'rewrite_text': article[9]
         }
     
 def get_all_articles_from_share():
