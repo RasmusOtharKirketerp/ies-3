@@ -53,7 +53,7 @@ def step_2_download_articles(DB_PATH):
 
 
         print(f'Updating article: {url}')
-        db_layer.update_article(article_data, DB_PATH)
+        db_layer.update_downloaded_article(article_data, DB_PATH)
 
 ### step 3 - score_articles
 def step_3_score_articles(DB_PATH):
