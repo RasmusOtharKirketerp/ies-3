@@ -50,8 +50,16 @@ IF %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-echo Saving current environment...
-.venv\Scripts\python.exe -m pip freeze > requirements.txt
+REM Do NOT overwrite requirements.txt with pip freeze output
+
 
 echo Environment setup complete!
+
+REM Open a new terminal and activate .venv
+start cmd /k "cd /d C:\Users\rasmu\OneDrive\Skrivebord\Dev\ies-3 && call .venv\Scripts\activate.bat"
+
+REM Start the SHARE app and pipeline
+call start_share_app.bat
+call start_mette_og_rasmus.bat
+
 ENDLOCAL

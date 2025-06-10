@@ -73,6 +73,16 @@ def get_users_websites(DB_PATH):
 def store_article(base_url, article_data, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+    # Handle publish_date as datetime or string
+    publish_date = article_data['publish_date']
+    if publish_date:
+        if isinstance(publish_date, datetime):
+            publish_date_str = publish_date.strftime('%Y-%m-%d')
+        else:
+            publish_date_str = str(publish_date)
+    else:
+        publish_date_str = None
+
     cursor.execute('''
         INSERT OR IGNORE INTO articles (
             base_url, url, title, authors, publish_date, text, top_image
@@ -82,7 +92,7 @@ def store_article(base_url, article_data, db_path):
         article_data['url'],
         article_data['title'],
         ', '.join(article_data['authors']),
-        article_data['publish_date'].strftime('%Y-%m-%d') if article_data['publish_date'] else None,
+        publish_date_str,
         article_data['text'],
         article_data['top_image']
     ))

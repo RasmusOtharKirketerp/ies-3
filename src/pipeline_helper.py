@@ -53,7 +53,8 @@ def step_2_download_articles(DB_PATH):
 
 
         print(f'Updating article: {url}')
-        db_layer.update_downloaded_article(article_data, DB_PATH)
+        # db_layer.store_article(article_data, DB_PATH)
+        db_layer.store_article(url, article_data, DB_PATH)  # Replace None with the correct third argument if needed
 
 ### step 3 - score_articles
 def step_3_score_articles(DB_PATH):
@@ -115,11 +116,15 @@ def run_pipeline(DB_PATH, user_id):
 if __name__ == '__main__':
     # get database path from start parameters
     import sys
-    if len(sys.argv) < 1:
-        print("Usage: python pipeline_helper <db_path> <user_id>")
-        sys.exit(1)
-    DB_PATH = sys.argv[1]
-    user_id = sys.argv[2]
+    DB_PATH = None
+    user_id = None
+    if len(sys.argv) == 1:
+        print("Usage: python pipeline_helper.py <db_path> <user_id>")
+        DB_PATH = 'share_articles.db'
+        user_id = 'SHARE'
+    else:
+        DB_PATH = sys.argv[1]
+        user_id = sys.argv[2]
     print(f"Starting app with db_path={DB_PATH}")
     db_layer.prepare_db(DB_PATH)
     # Initialize websites if running for the first time

@@ -228,13 +228,22 @@ def start_flask():
 if __name__ == '__main__':
     # get database path from start parameters
     import sys
-    if len(sys.argv) < 3:
-        print("Usage: python app.py <db_path> <port> <user_id>")
-        sys.exit(1)
-    HOST = '192.168.86.67'
-    DB_PATH = sys.argv[1]
-    PORT = sys.argv[2] 
-    USER_ID = sys.argv[3] 
+    print("Usage: python app.py <db_path> <port> <user_id>")
+    
+    HOST = '192.168.86.43'
+    DB_PATH = 'share_articles.db'
+    PORT = 1919 # Default port
+    USER_ID = 'SHARE'  # Default user ID
+    print("parms: ", sys.argv)
+    if len(sys.argv) == 1:
+            DB_PATH = 'share_articles.db'
+            PORT = 1919
+            USER_ID = 'SHARE'
+
+    elif len(sys.argv) == 4:
+        DB_PATH = sys.argv[1]
+        PORT = int(sys.argv[2])
+        USER_ID = sys.argv[3]
     print(f"Starting app with db_path={DB_PATH}, port={PORT}, user_id={USER_ID}")
 
     scoring_words = ScoringWords(db_path=DB_PATH)
