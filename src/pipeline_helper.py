@@ -54,7 +54,7 @@ def step_2_download_articles(DB_PATH):
 
         print(f'Updating article: {url}')
         # db_layer.store_article(article_data, DB_PATH)
-        db_layer.store_article(url, article_data, DB_PATH)  # Replace None with the correct third argument if needed
+        db_layer.store_article(url, article_data, DB_PATH) 
 
 ### step 3 - score_articles
 def step_3_score_articles(DB_PATH):

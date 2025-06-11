@@ -85,7 +85,8 @@ if __name__ == '__main__':
     #article_data = download_article('https://play.tv2.dk/event/serie-a-juventus-fiorentina-381eeb9d-f515-4552-aaa8-495ba39ac919', retries=1, delay=10, db_path=utils.PATH_TO_SHARE_DB)
 
     #article_data = download_article('https://nyheder.tv2.dk/politik/2025-01-06-tidligere-s-borgmester-faar-nyt-job', retries=1, delay=10, db_path=utils.PATH_TO_SHARE_DB)
-    URL = 'https://nyheder.tv2.dk/live/udland/2025-01-06-trump-vil-have-kontrol-over-groenland'
+    #URL = 'https://nyheder.tv2.dk/live/udland/2025-01-06-trump-vil-have-kontrol-over-groenland'
+    URL = 'https://www.dr.dk/nyheder/politik/lars-loekke-aaben-nye-sanktioner-der-er-behov-israel-aendrer-kurs'
     article_data = download_article(URL, retries=1, delay=10, db_path=utils.PATH_TO_SHARE_DB)
 
     print("Article data:")

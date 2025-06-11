@@ -35,20 +35,16 @@ IF %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-IF NOT EXIST requirements.txt (
-    echo Creating base requirements.txt...
-    echo requests>=2.31.0 > requirements.txt
-    echo beautifulsoup4>=4.12.0 >> requirements.txt
-    echo pandas>=2.2.0 >> requirements.txt
-    echo numpy>=1.26.0 >> requirements.txt
-)
-
 echo Installing requirements...
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 IF %ERRORLEVEL% NEQ 0 (
     echo Failed to install requirements
     exit /b %ERRORLEVEL%
 )
+
+REM Download NLTK punkt data
+echo Downloading NLTK punkt data...
+.venv\Scripts\python.exe -c "import nltk; nltk.download('punkt')"
 
 REM Do NOT overwrite requirements.txt with pip freeze output
 
@@ -58,8 +54,10 @@ echo Environment setup complete!
 REM Open a new terminal and activate .venv
 start cmd /k "cd /d C:\Users\rasmu\OneDrive\Skrivebord\Dev\ies-3 && call .venv\Scripts\activate.bat"
 
-REM Start the SHARE app and pipeline
-call start_share_app.bat
-call start_mette_og_rasmus.bat
+REM Start the SHARE app and pipeline in a new terminal
+start cmd /k "cd /d C:\Users\rasmu\OneDrive\Skrivebord\Dev\ies-3 && call start_share_app.bat"
+
+REM Start the METTE OG RASMUS app in a new terminal
+start cmd /k "cd /d C:\Users\rasmu\OneDrive\Skrivebord\Dev\ies-3 && call start_mette_og_rasmus_app.bat"
 
 ENDLOCAL

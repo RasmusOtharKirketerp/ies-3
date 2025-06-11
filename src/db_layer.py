@@ -96,7 +96,14 @@ def store_article(base_url, article_data, db_path):
         article_data['text'],
         article_data['top_image']
     ))
-    conn.commit()
+    # Check the return code
+    if cursor.rowcount == 0:
+        print(f"Insert ignored for url: {article_data['url']} (possibly already exists)")
+        conn.close()
+        update_downloaded_article(article_data, db_path)
+    else:
+        print(f"Article inserted for url: {article_data['url']}")
+        conn.commit()
     conn.close()
 
 
@@ -131,10 +138,14 @@ def update_downloaded_article(article_data, db_path):
 def do_url_need_download(url, db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+    print(f"Checking if URL {url} needs to be downloaded")
+    # Check if the URL is already in the database with an empty title
     cursor.execute('''
         SELECT id, url FROM articles WHERE url=? and title = ''
     ''', (url,))
     result = cursor.fetchone()
+    print(f"Result of check: {result}")
+    # If the result is None, it means the URL is not in the database or has a title
     conn.close()
     if result is None:
         print(f"URL {url} not in database, must download to use, returning True")
