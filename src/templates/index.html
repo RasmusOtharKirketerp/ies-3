@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ user_id }}-NewsRoom</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         .article-card {
             margin-bottom: 20px;
@@ -36,18 +37,27 @@
             gap: 10px;
             margin-bottom: 10px;
         }
+
+        body.compact .article-image,
+        body.compact .card-text {
+            display: none;
+        }
     </style>
 </head>
 
 <body class="container-fluid">
     <h1 class="mt-4">{{ user_id }}-NewsRoom</h1>
-    <div class="button-container mb-4">
-        <a href="/"><button class="btn btn-primary me-2 mb-2">All Articles</button></a>
-        <a href="/today"><button class="btn btn-primary me-2 mb-2">Today's Articles</button></a>
-        <a href="/words"><button class="btn btn-primary me-2 mb-2">Manage Words</button></a>
-        <a href="/original"><button class="btn btn-primary me-2 mb-2">Original Text</button></a>
-        <a href="/websites"><button class="btn btn-primary me-2 mb-2">Manage Websites</button></a>
-        <a href="/status"><button class="btn btn-primary me-2 mb-2">System Status</button></a>
+    <div class="button-container mb-3">
+        <a href="/" class="btn btn-primary me-2 mb-2" title="All Articles"><i class="bi bi-newspaper"></i></a>
+        <a href="/today" class="btn btn-primary me-2 mb-2" title="Today's Articles"><i class="bi bi-calendar-day"></i></a>
+        <a href="/words" class="btn btn-primary me-2 mb-2" title="Manage Words"><i class="bi bi-book"></i></a>
+        <a href="/original" class="btn btn-primary me-2 mb-2" title="Original Text"><i class="bi bi-card-text"></i></a>
+        <a href="/websites" class="btn btn-primary me-2 mb-2" title="Manage Websites"><i class="bi bi-globe"></i></a>
+        <a href="/status" class="btn btn-primary me-2 mb-2" title="System Status"><i class="bi bi-graph-up"></i></a>
+        <div class="form-check form-switch d-inline-block ms-3">
+            <input class="form-check-input" type="checkbox" id="viewSwitch">
+            <label class="form-check-label" for="viewSwitch">Compact View</label>
+        </div>
     </div>
 
     <div class="row">
@@ -83,6 +93,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const viewSwitch = document.getElementById('viewSwitch');
+        viewSwitch.addEventListener('change', function () {
+            document.body.classList.toggle('compact', this.checked);
+            localStorage.setItem('compactView', this.checked ? '1' : '0');
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const compact = localStorage.getItem('compactView') === '1';
+            viewSwitch.checked = compact;
+            if (compact) {
+                document.body.classList.add('compact');
+            }
+        });
+    </script>
 </body>
 
 </html>
