@@ -8,6 +8,14 @@ import os
 app = Flask(__name__)
 
 # Update all database functions to use DB_PATH
+def get_time_line_articles(limit=1000):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""SELECT title, rewrite_text, top_image, url, base_url, score, publish_date FROM articles WHERE rewrite_text > '' ORDER BY publish_date DESC LIMIT ?""", (limit,))
+    articles = cursor.fetchall()
+    conn.close()
+    return articles
+
 def get_articles(limit=10):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -219,6 +227,11 @@ def get_system_stats():
 def status():
     stats = get_system_stats()
     return render_template('status.html', stats=stats, user_id=USER_ID)
+
+@app.route('/timeline')
+def timeline():
+    articles = get_time_line_articles(limit=1000)
+    return render_template('index.html', articles=articles, get_google_favicon=get_google_favicon, user_id=USER_ID)
 
 def start_flask():
     """Start the Flask app with environment variables."""
