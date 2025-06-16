@@ -11,7 +11,7 @@ app = Flask(__name__)
 def get_articles(limit=10):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("""SELECT title, rewrite_text, top_image, url, base_url, score, publish_date FROM articles WHERE rewrite_text > '' ORDER BY score DESC LIMIT ?""", (limit,))
+    cursor.execute("""SELECT title, rewrite_text, top_image, url, base_url, score, publish_date FROM articles WHERE rewrite_text > '' ORDER BY date(publish_date) DESC, score DESC LIMIT ?""", (limit,))
     articles = cursor.fetchall()
     conn.close()
     return articles
@@ -32,7 +32,7 @@ def get_original_articles(limit=10):
         SELECT title, text, top_image, url, base_url, score, publish_date 
         FROM articles 
         WHERE text > '' 
-        ORDER BY score DESC 
+        ORDER BY date(publish_date) DESC, score DESC 
         LIMIT ?""", (limit,))
     articles = cursor.fetchall()
     conn.close()

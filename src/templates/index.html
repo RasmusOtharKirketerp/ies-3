@@ -38,9 +38,54 @@
             margin-bottom: 10px;
         }
 
-        body.compact .article-image,
+        body.compact .article-image {
+            display: block;
+            max-width: 160px;
+            max-height: 120px;
+            width: auto;
+            height: auto;
+        }
+
         body.compact .card-text {
             display: none;
+        }
+
+        /* Make the menu sticky */
+        .button-container {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: #fff;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .remove-article-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            top: auto;
+            left: auto;
+            z-index: 10;
+            background: #fff;
+            border: none;
+            color: #dc3545;
+            font-size: 1.2rem;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            line-height: 1;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .article-card {
+            position: relative;
+        }
+
+        .hide-pictures .article-image {
+            display: none !important;
         }
     </style>
 </head>
@@ -49,20 +94,34 @@
     <h1 class="mt-4">{{ user_id }}-NewsRoom</h1>
     <div class="button-container mb-3">
         <a href="/" class="btn btn-primary me-2 mb-2" title="All Articles"><i class="bi bi-newspaper"></i></a>
-        <a href="/today" class="btn btn-primary me-2 mb-2" title="Today's Articles"><i class="bi bi-calendar-day"></i></a>
+        <a href="/today" class="btn btn-primary me-2 mb-2" title="Today's Articles"><i
+                class="bi bi-calendar-day"></i></a>
         <a href="/words" class="btn btn-primary me-2 mb-2" title="Manage Words"><i class="bi bi-book"></i></a>
         <a href="/original" class="btn btn-primary me-2 mb-2" title="Original Text"><i class="bi bi-card-text"></i></a>
         <a href="/websites" class="btn btn-primary me-2 mb-2" title="Manage Websites"><i class="bi bi-globe"></i></a>
         <a href="/status" class="btn btn-primary me-2 mb-2" title="System Status"><i class="bi bi-graph-up"></i></a>
+        <button id="resetHiddenBtn" class="btn btn-primary me-2 mb-2" type="button" onclick="resetHiddenArticles()"
+            title="Show all hidden articles">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+        <button id="markAllReadBtn" class="btn btn-primary me-2 mb-2" type="button" onclick="markAllRead()"
+            title="Mark all articles as read">
+            <i class="bi bi-eye-slash"></i>
+        </button>
         <div class="form-check form-switch d-inline-block ms-3">
             <input class="form-check-input" type="checkbox" id="viewSwitch">
             <label class="form-check-label" for="viewSwitch">Compact View</label>
         </div>
+        <div class="form-check form-switch d-inline-block ms-3">
+            <input class="form-check-input" type="checkbox" id="pictureSwitch">
+            <label class="form-check-label" for="pictureSwitch">Show Pictures</label>
+        </div>
+
     </div>
 
     <div class="row">
         {% for title, text, top_image, url, base_url, score, publish_date in articles %}
-        <div class="col-12 article-card">
+        <div class="col-12 article-card" data-article-url="{{ url }}">
             <div class="card">
                 <div class="card-body">
                     <div class="row">
@@ -86,6 +145,9 @@
                             <a href="{{ url }}" target="_blank" class="btn btn-sm btn-outline-primary">Read More</a>
                         </div>
                     </div>
+                    <button class="remove-article-btn" title="Remove this article" onclick="removeArticle(this)">
+                        &times;
+                    </button>
                 </div>
             </div>
         </div>
@@ -99,13 +161,72 @@
             document.body.classList.toggle('compact', this.checked);
             localStorage.setItem('compactView', this.checked ? '1' : '0');
         });
+
+        // Picture switch logic
+        const pictureSwitch = document.getElementById('pictureSwitch');
+        pictureSwitch.addEventListener('change', function () {
+            document.body.classList.toggle('hide-pictures', !this.checked);
+            localStorage.setItem('showPictures', this.checked ? '1' : '0');
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             const compact = localStorage.getItem('compactView') === '1';
             viewSwitch.checked = compact;
             if (compact) {
                 document.body.classList.add('compact');
             }
+
+            // Picture switch state
+            const showPictures = localStorage.getItem('showPictures');
+            if (showPictures === null || showPictures === '1') {
+                pictureSwitch.checked = true;
+                document.body.classList.remove('hide-pictures');
+            } else {
+                pictureSwitch.checked = false;
+                document.body.classList.add('hide-pictures');
+            }
+
+            // Hide articles that were hidden previously
+            const hiddenArticles = JSON.parse(localStorage.getItem('hiddenArticles') || '[]');
+            hiddenArticles.forEach(url => {
+                const card = document.querySelector(`.article-card[data-article-url="${url}"]`);
+                if (card) card.style.display = 'none';
+            });
         });
+
+        function removeArticle(btn) {
+            const card = btn.closest('.article-card');
+            if (card) {
+                card.style.display = 'none';
+                // Save hidden article URL to localStorage
+                const url = card.getAttribute('data-article-url');
+                let hiddenArticles = JSON.parse(localStorage.getItem('hiddenArticles') || '[]');
+                if (!hiddenArticles.includes(url)) {
+                    hiddenArticles.push(url);
+                    localStorage.setItem('hiddenArticles', JSON.stringify(hiddenArticles));
+                }
+            }
+        }
+
+        function resetHiddenArticles() {
+            // Show all articles
+            document.querySelectorAll('.article-card').forEach(card => {
+                card.style.display = '';
+            });
+            // Clear hidden articles from localStorage
+            localStorage.removeItem('hiddenArticles');
+        }
+
+        function markAllRead() {
+            // Hide all articles and store their URLs in localStorage
+            let hiddenArticles = [];
+            document.querySelectorAll('.article-card').forEach(card => {
+                card.style.display = 'none';
+                const url = card.getAttribute('data-article-url');
+                if (url) hiddenArticles.push(url);
+            });
+            localStorage.setItem('hiddenArticles', JSON.stringify(hiddenArticles));
+        }
     </script>
 </body>
 

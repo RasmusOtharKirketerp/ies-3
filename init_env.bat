@@ -1,4 +1,9 @@
 @echo off
+
+REM init_env.bat
+REM This script sets up a Python virtual environment, installs dependencies, and starts the SHARE app and pipeline.
+REM It also opens a new terminal window with the virtual environment activated.
+
 SETLOCAL
 
 echo Checking Python installation...
