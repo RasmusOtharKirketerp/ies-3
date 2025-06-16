@@ -87,10 +87,61 @@
         .hide-pictures .article-image {
             display: none !important;
         }
+
+        .weather-ticker {
+            width: 100%;
+            background: #007bff;
+            color: #fff;
+            font-weight: 500;
+            padding: 8px 0 8px 0;
+            text-align: center;
+            font-size: 1.1rem;
+            white-space: nowrap;
+            overflow-x: auto;
+            position: relative;
+            height: 44px;
+        }
+
+        .weather-ticker-inner {
+            display: inline-block;
+            white-space: nowrap;
+            will-change: transform;
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            animation: ticker-scroll 25s linear infinite;
+        }
+
+        .weather-ticker.paused .weather-ticker-inner {
+            animation-play-state: paused;
+        }
+
+        @keyframes ticker-scroll {
+            0% {
+                left: 100%;
+            }
+
+            100% {
+                left: -100%;
+            }
+        }
+
+        .weather-ticker img {
+            vertical-align: middle;
+            height: 28px;
+            width: 28px;
+            margin: 0 2px;
+            background: #fff2;
+            border-radius: 50%;
+        }
     </style>
 </head>
 
 <body class="container-fluid">
+    <div id="weather-ticker" class="weather-ticker">
+        <span class="weather-ticker-inner" id="weather-ticker-inner">Loading weather...</span>
+    </div>
     <h1 class="mt-4">{{ user_id }}-NewsRoom</h1>
     <div class="button-container mb-3">
         <a href="/" class="btn btn-primary me-2 mb-2" title="All Articles"><i class="bi bi-newspaper"></i></a>
@@ -229,6 +280,98 @@
             });
             localStorage.setItem('hiddenArticles', JSON.stringify(hiddenArticles));
         }
+
+        // Weather ticker logic
+        document.addEventListener('DOMContentLoaded', function () {
+            // Weather ticker
+            const apiKey = '1f3879c87fa9c0c5e894a16510d496c8'; // <-- Replace with your OpenWeatherMap API key
+            const city = 'Stenløse,DK';      // <-- Replace with your city name (no space before country code)
+            const weatherTicker = document.getElementById('weather-ticker');
+            const weatherTickerInner = document.getElementById('weather-ticker-inner');
+
+            function getDayName(dt) {
+                return new Date(dt * 1000).toLocaleDateString(undefined, { weekday: 'short' });
+            }
+
+            function getIconHtml(icon, desc) {
+                return `<img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}" title="${desc}">`;
+            }
+
+            fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=da`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.list) {
+                        weatherTickerInner.textContent = "Weather data unavailable";
+                        return;
+                    }
+                    const now = new Date();
+                    const today = now.getDate();
+                    const tomorrow = new Date(now.getTime() + 86400000).getDate();
+
+                    let todayTemps = [];
+                    let tomorrowTemps = [];
+                    let weekendTemps = [];
+
+                    data.list.forEach(item => {
+                        const date = new Date(item.dt * 1000);
+                        const day = date.getDate();
+                        const weekday = date.getDay(); // 0=Sunday, 6=Saturday
+
+                        if (day === today) {
+                            todayTemps.push(item);
+                        } else if (day === tomorrow) {
+                            tomorrowTemps.push(item);
+                        } else if (weekday === 6 || weekday === 0) {
+                            weekendTemps.push(item);
+                        }
+                    });
+
+                    function summarizePeriod(period) {
+                        if (period.length === 0) return '';
+                        const min = Math.round(Math.min(...period.map(i => i.main.temp_min)));
+                        const max = Math.round(Math.max(...period.map(i => i.main.temp_max)));
+                        // Pick the most frequent icon
+                        const iconCounts = {};
+                        period.forEach(i => {
+                            const icon = i.weather[0].icon;
+                            iconCounts[icon] = (iconCounts[icon] || 0) + 1;
+                        });
+                        const mainIcon = Object.entries(iconCounts).sort((a, b) => b[1] - a[1])[0][0];
+                        const desc = period[Math.floor(period.length / 2)].weather[0].description;
+                        return `${getIconHtml(mainIcon, desc)} ${min}°C-${max}°C, ${desc}`;
+                    }
+
+                    const todayStr = todayTemps.length ? `I dag: ${summarizePeriod(todayTemps)}` : '';
+                    const tomorrowStr = tomorrowTemps.length ? `I morgen: ${summarizePeriod(tomorrowTemps)}` : '';
+                    let weekendStr = '';
+                    if (weekendTemps.length) {
+                        // Group by day
+                        const days = {};
+                        weekendTemps.forEach(item => {
+                            const d = getDayName(item.dt);
+                            if (!days[d]) days[d] = [];
+                            days[d].push(item);
+                        });
+                        weekendStr = Object.entries(days).map(([d, arr]) =>
+                            `${d}: ${summarizePeriod(arr)}`
+                        ).join(' | ');
+                        if (weekendStr) weekendStr = `Weekend: ${weekendStr}`;
+                    }
+
+                    weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join(' | ');
+                })
+                .catch(() => {
+                    weatherTickerInner.textContent = "Weather data unavailable";
+                });
+
+            // Pause animation on hover
+            weatherTicker.addEventListener('mouseenter', function () {
+                weatherTicker.classList.add('paused');
+            });
+            weatherTicker.addEventListener('mouseleave', function () {
+                weatherTicker.classList.remove('paused');
+            });
+        });
     </script>
 </body>
 
