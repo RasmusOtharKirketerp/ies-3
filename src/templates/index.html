@@ -97,7 +97,7 @@
             text-align: center;
             font-size: 1.1rem;
             white-space: nowrap;
-            overflow-x: auto;
+            overflow: hidden;
             position: relative;
             height: 44px;
         }
@@ -110,7 +110,8 @@
             left: 100%;
             top: 50%;
             transform: translateY(-50%);
-            animation: ticker-scroll 25s linear infinite;
+            /* Animation duration will be set dynamically */
+            animation: ticker-scroll 15s linear infinite;
         }
 
         .weather-ticker.paused .weather-ticker-inner {
@@ -120,10 +121,12 @@
         @keyframes ticker-scroll {
             0% {
                 left: 100%;
+                transform: translateY(-50%);
             }
 
             100% {
-                left: -100%;
+                left: 0%;
+                transform: translateX(-100%) translateY(-50%);
             }
         }
 
@@ -144,8 +147,8 @@
     </div>
     <h1 class="mt-4">{{ user_id }}-NewsRoom</h1>
     <div class="button-container mb-3">
-        <a href="/" class="btn btn-primary me-2 mb-2" title="All Articles"><i class="bi bi-newspaper"></i></a>
-        <a href="/today" class="btn btn-primary me-2 mb-2" title="Today's Articles"><i
+        <a href="/" class="btn btn-success me-2 mb-2" title="All Articles"><i class="bi bi-newspaper"></i></a>
+        <a href="/today" class="btn btn-success me-2 mb-2" title="Today's Articles"><i
                 class="bi bi-calendar-day"></i></a>
         <a href="/timeline" class="btn btn-primary me-2 mb-2" title="Timeline View"><i
                 class="bi bi-clock-history"></i></a>
@@ -297,6 +300,23 @@
                 return `<img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}" title="${desc}">`;
             }
 
+            function setTickerAnimation() {
+                // Duplicate the content for endless loop
+                const content = weatherTickerInner.innerHTML;
+                weatherTickerInner.innerHTML = content + " &nbsp;|&nbsp; " + content;
+
+                // Calculate animation duration based on content width and viewport
+                setTimeout(() => {
+                    const tickerWidth = weatherTicker.offsetWidth;
+                    const contentWidth = weatherTickerInner.scrollWidth / 2; // since we duplicated
+                    // Set duration so that the text moves at a constant speed
+                    const speed = 80; // px per second
+                    const duration = (contentWidth + tickerWidth) / speed;
+                    weatherTickerInner.style.animationDuration = duration + "s";
+                }, 100); // wait for DOM update
+            }
+
+            // Fetch weather data
             fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=da`)
                 .then(response => response.json())
                 .then(data => {
@@ -358,7 +378,27 @@
                         if (weekendStr) weekendStr = `Weekend: ${weekendStr}`;
                     }
 
-                    weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join(' | ');
+                    // Fetch Xolta data and combine with weather
+                    const XOLTA_API = "http://80.197.112.200:9123/xolta/data";
+                    const XOLTA_KEY = "sk-5nC3TqA7rLgJ9wXzM0vKbF2eYtPqDU1L";
+                    fetch(XOLTA_API, {
+                        headers: {
+                            "Authorization": `Bearer ${XOLTA_KEY}`,
+                            "X-API-Key": XOLTA_KEY
+                        }
+                    })
+                        .then(r => r.json())
+                        .then(xolta => {
+                            // Compose Xolta info
+                            const xoltaStr = `🔋 Xolta: ${xolta["Tidspunkt"]} | Solceller: ${xolta["Solceller"]} kW | Nettet: ${xolta["Nettet"]} kW | Batteri: ${xolta["Batteri"]} kW | Husforbrug: ${xolta["Husforbrug"]} kW | Batteri status: ${xolta["Batteri status"]}% | Egenproduktion: ${xolta["Egenproduktion_pct"]}%`;
+                            weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr, xoltaStr].filter(Boolean).join(' | ');
+                            setTickerAnimation();
+                        })
+                        .catch(() => {
+                            // If Xolta fails, show only weather
+                            weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join(' | ');
+                            setTickerAnimation();
+                        });
                 })
                 .catch(() => {
                     weatherTickerInner.textContent = "Weather data unavailable";

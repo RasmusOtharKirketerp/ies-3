@@ -27,7 +27,8 @@ def discover_articles(base_url):
 
 if __name__ == '__main__':
     #base_url = 'https://www.dr.dk/nyheder'
-    base_url = 'https://egedalkommune.dk/nyheder'
+    #base_url = 'https://egedalkommune.dk/nyheder'
+    base_url = 'https://x.com/KyivPost/status/1934644778446074311'
     urls = discover_articles(base_url)
 
     print(urls)
