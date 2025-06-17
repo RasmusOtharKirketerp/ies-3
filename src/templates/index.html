@@ -88,7 +88,8 @@
             display: none !important;
         }
 
-        .weather-ticker {
+        .weather-ticker,
+        .xolta-ticker {
             width: 100%;
             background: #007bff;
             color: #fff;
@@ -102,7 +103,14 @@
             height: 44px;
         }
 
-        .weather-ticker-inner {
+        .xolta-ticker {
+            background: #198754;
+            /* Bootstrap green */
+            margin-bottom: 0;
+        }
+
+        .weather-ticker-inner,
+        .xolta-ticker-inner {
             display: inline-block;
             white-space: nowrap;
             will-change: transform;
@@ -110,11 +118,11 @@
             left: 100%;
             top: 50%;
             transform: translateY(-50%);
-            /* Animation duration will be set dynamically */
             animation: ticker-scroll 15s linear infinite;
         }
 
-        .weather-ticker.paused .weather-ticker-inner {
+        .weather-ticker.paused .weather-ticker-inner,
+        .xolta-ticker.paused .xolta-ticker-inner {
             animation-play-state: paused;
         }
 
@@ -130,7 +138,9 @@
             }
         }
 
-        .weather-ticker img {
+        .weather-ticker img,
+        .xolta-ticker img,
+        .xolta-ticker i {
             vertical-align: middle;
             height: 28px;
             width: 28px;
@@ -138,12 +148,23 @@
             background: #fff2;
             border-radius: 50%;
         }
+
+        .xolta-ticker i {
+            background: none;
+            color: #fff;
+            font-size: 1.2em;
+            width: auto;
+            height: auto;
+        }
     </style>
 </head>
 
 <body class="container-fluid">
     <div id="weather-ticker" class="weather-ticker">
         <span class="weather-ticker-inner" id="weather-ticker-inner">Loading weather...</span>
+    </div>
+    <div id="xolta-ticker" class="xolta-ticker">
+        <span class="xolta-ticker-inner" id="xolta-ticker-inner">Loading Xolta data...</span>
     </div>
     <h1 class="mt-4">{{ user_id }}-NewsRoom</h1>
     <div class="button-container mb-3">
@@ -287,10 +308,12 @@
         // Weather ticker logic
         document.addEventListener('DOMContentLoaded', function () {
             // Weather ticker
-            const apiKey = '1f3879c87fa9c0c5e894a16510d496c8'; // <-- Replace with your OpenWeatherMap API key
-            const city = 'Stenløse,DK';      // <-- Replace with your city name (no space before country code)
+            const apiKey = '1f3879c87fa9c0c5e894a16510d496c8';
+            const city = 'Stenløse,DK';
             const weatherTicker = document.getElementById('weather-ticker');
             const weatherTickerInner = document.getElementById('weather-ticker-inner');
+            const xoltaTicker = document.getElementById('xolta-ticker');
+            const xoltaTickerInner = document.getElementById('xolta-ticker-inner');
 
             function getDayName(dt) {
                 return new Date(dt * 1000).toLocaleDateString(undefined, { weekday: 'short' });
@@ -300,23 +323,22 @@
                 return `<img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}" title="${desc}">`;
             }
 
-            function setTickerAnimation() {
+            function setTickerAnimation(ticker, tickerInner) {
                 // Duplicate the content for endless loop
-                const content = weatherTickerInner.innerHTML;
-                weatherTickerInner.innerHTML = content + " &nbsp;|&nbsp; " + content;
+                const content = tickerInner.innerHTML;
+                tickerInner.innerHTML = content + " &nbsp;|&nbsp; " + content;
 
                 // Calculate animation duration based on content width and viewport
                 setTimeout(() => {
-                    const tickerWidth = weatherTicker.offsetWidth;
-                    const contentWidth = weatherTickerInner.scrollWidth / 2; // since we duplicated
-                    // Set duration so that the text moves at a constant speed
+                    const tickerWidth = ticker.offsetWidth;
+                    const contentWidth = tickerInner.scrollWidth / 2; // since we duplicated
                     const speed = 80; // px per second
                     const duration = (contentWidth + tickerWidth) / speed;
-                    weatherTickerInner.style.animationDuration = duration + "s";
-                }, 100); // wait for DOM update
+                    tickerInner.style.animationDuration = duration + "s";
+                }, 100);
             }
 
-            // Fetch weather data
+            // Weather ticker fetch
             fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=da`)
                 .then(response => response.json())
                 .then(data => {
@@ -335,8 +357,7 @@
                     data.list.forEach(item => {
                         const date = new Date(item.dt * 1000);
                         const day = date.getDate();
-                        const weekday = date.getDay(); // 0=Sunday, 6=Saturday
-
+                        const weekday = date.getDay();
                         if (day === today) {
                             todayTemps.push(item);
                         } else if (day === tomorrow) {
@@ -365,7 +386,6 @@
                     const tomorrowStr = tomorrowTemps.length ? `I morgen: ${summarizePeriod(tomorrowTemps)}` : '';
                     let weekendStr = '';
                     if (weekendTemps.length) {
-                        // Group by day
                         const days = {};
                         weekendTemps.forEach(item => {
                             const d = getDayName(item.dt);
@@ -378,40 +398,64 @@
                         if (weekendStr) weekendStr = `Weekend: ${weekendStr}`;
                     }
 
-                    // Fetch Xolta data and combine with weather
-                    const XOLTA_API = "http://80.197.112.200:9123/xolta/data";
-                    const XOLTA_KEY = "sk-5nC3TqA7rLgJ9wXzM0vKbF2eYtPqDU1L";
-                    fetch(XOLTA_API, {
-                        headers: {
-                            "Authorization": `Bearer ${XOLTA_KEY}`,
-                            "X-API-Key": XOLTA_KEY
-                        }
-                    })
-                        .then(r => r.json())
-                        .then(xolta => {
-                            // Compose Xolta info
-                            const xoltaStr = `🔋 Xolta: ${xolta["Tidspunkt"]} | Solceller: ${xolta["Solceller"]} kW | Nettet: ${xolta["Nettet"]} kW | Batteri: ${xolta["Batteri"]} kW | Husforbrug: ${xolta["Husforbrug"]} kW | Batteri status: ${xolta["Batteri status"]}% | Egenproduktion: ${xolta["Egenproduktion_pct"]}%`;
-                            weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr, xoltaStr].filter(Boolean).join(' | ');
-                            setTickerAnimation();
-                        })
-                        .catch(() => {
-                            // If Xolta fails, show only weather
-                            weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join(' | ');
-                            setTickerAnimation();
-                        });
+                    weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join(' | ');
+                    setTickerAnimation(weatherTicker, weatherTickerInner);
                 })
                 .catch(() => {
                     weatherTickerInner.textContent = "Weather data unavailable";
                 });
 
-            // Pause animation on hover
+            // Xolta ticker fetch
+            function fetchAndAnimateXolta() {
+                const XOLTA_API = "http://80.197.112.200:9123/xolta/data";
+                const XOLTA_KEY = "sk-5nC3TqA7rLgJ9wXzM0vKbF2eYtPqDU1L";
+                fetch(XOLTA_API, {
+                    headers: {
+                        "Authorization": `Bearer ${XOLTA_KEY}`,
+                        "X-API-Key": XOLTA_KEY
+                    }
+                })
+                    .then(r => r.json())
+                    .then(xolta => {
+                        const xoltaStr = `
+                            <i class="bi bi-battery-full"></i> ${xolta["Batteri status"]}% 
+                            <i class="bi bi-sun"></i> ${xolta["Solceller"]} kW 
+                            <i class="bi bi-house"></i> ${xolta["Husforbrug"]} kW 
+                            <i class="bi bi-lightning-charge"></i> ${xolta["Nettet"]} kW 
+                            <i class="bi bi-battery-charging"></i> ${xolta["Batteri"]} kW 
+                            <i class="bi bi-percent"></i> ${xolta["Egenproduktion_pct"]}% 
+                            <i class="bi bi-clock"></i> ${xolta["Tidspunkt"]}
+                        `;
+                        xoltaTickerInner.innerHTML = xoltaStr;
+                        setTickerAnimation(xoltaTicker, xoltaTickerInner);
+                    })
+                    .catch(() => {
+                        xoltaTickerInner.textContent = "Xolta data unavailable";
+                        setTickerAnimation(xoltaTicker, xoltaTickerInner);
+                    });
+            }
+
+            // Initial Xolta fetch
+            fetchAndAnimateXolta();
+
+            // Refresh Xolta ticker every 60 seconds
+            setInterval(fetchAndAnimateXolta, 60000);
+
+            // Pause animation on hover for both tickers
             weatherTicker.addEventListener('mouseenter', function () {
                 weatherTicker.classList.add('paused');
             });
             weatherTicker.addEventListener('mouseleave', function () {
                 weatherTicker.classList.remove('paused');
             });
+            xoltaTicker.addEventListener('mouseenter', function () {
+                xoltaTicker.classList.add('paused');
+            });
+            xoltaTicker.addEventListener('mouseleave', function () {
+                xoltaTicker.classList.remove('paused');
+            });
         });
+        // ...existing code...
     </script>
 </body>
 
