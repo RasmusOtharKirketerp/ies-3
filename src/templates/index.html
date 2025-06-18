@@ -88,6 +88,15 @@
             display: none !important;
         }
 
+        .hide-pictures .col-md-3 {
+            display: none !important;
+        }
+
+        .hide-pictures .col-md-9 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
         .weather-ticker,
         .xolta-ticker {
             width: 100%;
@@ -97,10 +106,12 @@
             padding: 8px 0 8px 0;
             text-align: center;
             font-size: 1.1rem;
-            white-space: nowrap;
+            white-space: normal;
             overflow: hidden;
             position: relative;
-            height: 44px;
+            height: auto;
+            min-height: 44px;
+            margin-bottom: 0.5rem;
         }
 
         .xolta-ticker {
@@ -112,18 +123,18 @@
         .weather-ticker-inner,
         .xolta-ticker-inner {
             display: inline-block;
-            white-space: nowrap;
-            will-change: transform;
-            position: absolute;
-            left: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            animation: ticker-scroll 15s linear infinite;
+            white-space: normal;
+            will-change: auto;
+            position: static;
+            left: auto;
+            top: auto;
+            transform: none;
+            animation: none;
         }
 
         .weather-ticker.paused .weather-ticker-inner,
         .xolta-ticker.paused .xolta-ticker-inner {
-            animation-play-state: paused;
+            animation-play-state: initial;
         }
 
         @keyframes ticker-scroll {
@@ -203,6 +214,11 @@
             color: #e8e6e3 !important;
         }
 
+        body.dark-mode .article-meta small,
+        body.dark-mode .article-meta .text-muted {
+            color: #b0b0b0 !important;
+        }
+
         body.dark-mode .badge.bg-success {
             background-color: #28a745 !important;
             color: #fff !important;
@@ -251,6 +267,10 @@
         <span class="xolta-ticker-inner" id="xolta-ticker-inner">Loading Xolta data...</span>
     </div>
     <h1 class="mt-4">{{ user_id }}-NewsRoom</h1>
+    <div class="progress mb-3" style="height: 8px;">
+        <div id="reload-progress" class="progress-bar bg-info" role="progressbar" style="width: 100%;"
+            aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
     <div class="button-container mb-3">
         <a href="/" class="btn btn-success me-2 mb-2" title="All Articles"><i class="bi bi-newspaper"></i></a>
         <a href="/today" class="btn btn-success me-2 mb-2" title="Today's Articles"><i
@@ -431,22 +451,7 @@
                 return `<img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}" title="${desc}">`;
             }
 
-            function setTickerAnimation(ticker, tickerInner) {
-                // Duplicate the content for endless loop
-                const content = tickerInner.innerHTML;
-                tickerInner.innerHTML = content + " &nbsp;|&nbsp; " + content;
-
-                // Calculate animation duration based on content width and viewport
-                setTimeout(() => {
-                    const tickerWidth = ticker.offsetWidth;
-                    const contentWidth = tickerInner.scrollWidth / 2; // since we duplicated
-                    const speed = 80; // px per second
-                    const duration = (contentWidth + tickerWidth) / speed;
-                    tickerInner.style.animationDuration = duration + "s";
-                }, 100);
-            }
-
-            // Weather ticker fetch
+            // Weather ticker fetch (now static box)
             fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=da`)
                 .then(response => response.json())
                 .then(data => {
@@ -507,14 +512,13 @@
                     }
 
                     weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join(' | ');
-                    setTickerAnimation(weatherTicker, weatherTickerInner);
                 })
                 .catch(() => {
                     weatherTickerInner.textContent = "Weather data unavailable";
                 });
 
-            // Xolta ticker fetch
-            function fetchAndAnimateXolta() {
+            // Xolta box fetch (now static box)
+            function fetchAndShowXolta() {
                 const XOLTA_API = "http://80.197.112.200:9123/xolta/data";
                 const XOLTA_KEY = "sk-5nC3TqA7rLgJ9wXzM0vKbF2eYtPqDU1L";
                 fetch(XOLTA_API, {
@@ -525,45 +529,60 @@
                 })
                     .then(r => r.json())
                     .then(xolta => {
+                        // Defensive: fallback to -- if value is undefined/null/empty or not a number
+                        function safe(val, unit = '') {
+                            // Accept 0, negative, and positive numbers, but not undefined/null/empty/"undefined"/"null"
+                            if (
+                                val === undefined ||
+                                val === null ||
+                                val === '' ||
+                                val === 'undefined' ||
+                                val === 'null' ||
+                                (unit && (typeof val !== 'number' && isNaN(Number(val))))
+                            ) return '--' + unit;
+                            // Format numbers to 2 decimals for kW and % units
+                            if (unit && unit.trim() === 'kW' && !isNaN(Number(val))) return Number(val).toFixed(2) + unit;
+                            if (unit && unit.trim() === '%' && !isNaN(Number(val))) return Number(val).toFixed(2) + unit;
+                            return val + unit;
+                        }
                         const xoltaStr = `
-                            <i class="bi bi-battery-full"></i> ${xolta["Batteri status"]}% 
-                            <i class="bi bi-sun"></i> ${xolta["Solceller"]} kW 
-                            <i class="bi bi-house"></i> ${xolta["Husforbrug"]} kW 
-                            <i class="bi bi-lightning-charge"></i> ${xolta["Nettet"]} kW 
-                            <i class="bi bi-battery-charging"></i> ${xolta["Batteri"]} kW 
-                            <i class="bi bi-percent"></i> ${xolta["Egenproduktion_pct"]}% 
-                            <i class="bi bi-clock"></i> ${xolta["Tidspunkt"]}
-                        `;
+                        <i class="bi bi-battery-full"></i> ${safe(xolta["Batteri status"], '%')}
+                        <i class="bi bi-sun"></i> ${safe(xolta["Solceller"], ' kW')}
+                        <i class="bi bi-house"></i> ${safe(xolta["Husforbrug"], ' kW')}
+                        <i class="bi bi-lightning-charge"></i> ${safe(xolta["Nettet"], ' kW')}
+                        <i class="bi bi-battery-charging"></i> ${safe(xolta["Batteri"], ' kW')}
+                        <i class="bi bi-percent"></i> ${safe(xolta["Egenproduktion_pct"], '%')}
+                        <i class="bi bi-clock-history"></i> ${safe(xolta["Tidspunkt"])}
+                    `;
                         xoltaTickerInner.innerHTML = xoltaStr;
-                        setTickerAnimation(xoltaTicker, xoltaTickerInner);
                     })
                     .catch(() => {
                         xoltaTickerInner.textContent = "Xolta data unavailable";
-                        setTickerAnimation(xoltaTicker, xoltaTickerInner);
                     });
             }
 
             // Initial Xolta fetch
-            fetchAndAnimateXolta();
+            fetchAndShowXolta();
 
-            // Refresh Xolta ticker every 60 seconds
-            setInterval(fetchAndAnimateXolta, 60000);
-
-            // Pause animation on hover for both tickers
-            weatherTicker.addEventListener('mouseenter', function () {
-                weatherTicker.classList.add('paused');
-            });
-            weatherTicker.addEventListener('mouseleave', function () {
-                weatherTicker.classList.remove('paused');
-            });
-            xoltaTicker.addEventListener('mouseenter', function () {
-                xoltaTicker.classList.add('paused');
-            });
-            xoltaTicker.addEventListener('mouseleave', function () {
-                xoltaTicker.classList.remove('paused');
-            });
+            // Refresh Xolta box every 60 seconds
+            setInterval(fetchAndShowXolta, 60000);
         });
-        // ...existing code...
+        // Progress bar timer for reload
+        let reloadSeconds = 60;
+        const progressBar = document.getElementById('reload-progress');
+        let progress = 100;
+        function updateProgressBar() {
+            progress -= 100 / reloadSeconds;
+            if (progress < 0) progress = 0;
+            progressBar.style.width = progress + "%";
+            progressBar.setAttribute('aria-valuenow', Math.round(progress));
+        }
+        setInterval(updateProgressBar, 1000);
+
+        // Page reload every 60 seconds
+        setTimeout(function () {
+            window.location.reload();
+        }, reloadSeconds * 1000);
     </script>
 </body>
 
