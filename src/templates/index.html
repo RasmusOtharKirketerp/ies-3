@@ -482,17 +482,15 @@
 
                     function summarizePeriod(period) {
                         if (period.length === 0) return '';
-                        const min = Math.round(Math.min(...period.map(i => i.main.temp_min)));
+                        // Find max temp and most frequent icon
                         const max = Math.round(Math.max(...period.map(i => i.main.temp_max)));
-                        // Pick the most frequent icon
                         const iconCounts = {};
                         period.forEach(i => {
                             const icon = i.weather[0].icon;
                             iconCounts[icon] = (iconCounts[icon] || 0) + 1;
                         });
                         const mainIcon = Object.entries(iconCounts).sort((a, b) => b[1] - a[1])[0][0];
-                        const desc = period[Math.floor(period.length / 2)].weather[0].description;
-                        return `${getIconHtml(mainIcon, desc)} ${min}°C-${max}°C, ${desc}`;
+                        return `${getIconHtml(mainIcon, '')} ${max}°C`;
                     }
 
                     const todayStr = todayTemps.length ? `I dag: ${summarizePeriod(todayTemps)}` : '';
@@ -507,11 +505,11 @@
                         });
                         weekendStr = Object.entries(days).map(([d, arr]) =>
                             `${d}: ${summarizePeriod(arr)}`
-                        ).join(' | ');
+                        ).join('  ');
                         if (weekendStr) weekendStr = `Weekend: ${weekendStr}`;
                     }
 
-                    weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join(' | ');
+                    weatherTickerInner.innerHTML = [todayStr, tomorrowStr, weekendStr].filter(Boolean).join('  ');
                 })
                 .catch(() => {
                     weatherTickerInner.textContent = "Weather data unavailable";
@@ -540,19 +538,24 @@
                                 val === 'null' ||
                                 (unit && (typeof val !== 'number' && isNaN(Number(val))))
                             ) return '--' + unit;
-                            // Format numbers to 2 decimals for kW and % units
-                            if (unit && unit.trim() === 'kW' && !isNaN(Number(val))) return Number(val).toFixed(2) + unit;
-                            if (unit && unit.trim() === '%' && !isNaN(Number(val))) return Number(val).toFixed(2) + unit;
+                            // Special: treat values between -0.05 and +0.05 as 0 (no decimals)
+                            if (unit && (unit.trim() === 'kW' || unit.trim() === '%')) {
+                                let num = Number(val);
+                                if (num > -0.05 && num < 0.05) return '0' + unit;
+                                // If exactly 100 and unit is %, show as 100 % (no decimals)
+                                if (unit.trim() === '%' && Math.abs(num - 100) < 0.005) return '100' + unit;
+                                return num.toFixed(2) + unit;
+                            }
                             return val + unit;
                         }
                         const xoltaStr = `
+                        <i class="bi bi-house"></i> ${safe(xolta["Husforbrug"], '')}
+                        <i class="bi bi-sun"></i> ${safe(xolta["Solceller"], '')}
+                        <i class="bi bi-sun"></i> ${safe(xolta["Egenproduktion_pct"], '%')}
+                        <i class="bi bi-lightning-charge"></i> ${safe(xolta["Nettet"], ' ')}
+                        <i class="bi bi-battery-charging"></i> ${safe(xolta["Batteri"], '')}
                         <i class="bi bi-battery-full"></i> ${safe(xolta["Batteri status"], '%')}
-                        <i class="bi bi-sun"></i> ${safe(xolta["Solceller"], ' kW')}
-                        <i class="bi bi-house"></i> ${safe(xolta["Husforbrug"], ' kW')}
-                        <i class="bi bi-lightning-charge"></i> ${safe(xolta["Nettet"], ' kW')}
-                        <i class="bi bi-battery-charging"></i> ${safe(xolta["Batteri"], ' kW')}
-                        <i class="bi bi-percent"></i> ${safe(xolta["Egenproduktion_pct"], '%')}
-                        <i class="bi bi-clock-history"></i> ${safe(xolta["Tidspunkt"])}
+                        
                     `;
                         xoltaTickerInner.innerHTML = xoltaStr;
                     })
@@ -564,8 +567,6 @@
             // Initial Xolta fetch
             fetchAndShowXolta();
 
-            // Refresh Xolta box every 60 seconds
-            setInterval(fetchAndShowXolta, 60000);
         });
         // Progress bar timer for reload
         let reloadSeconds = 60;
