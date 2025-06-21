@@ -55,6 +55,9 @@ def step_2_download_articles(DB_PATH):
         print(f'Updating article: {url}')
         # db_layer.store_article(article_data, DB_PATH)
         db_layer.store_article(url, article_data, DB_PATH) 
+        sleep_time = 1  # Sleep for 1 second between downloads to avoid overwhelming the server
+        print(f'Sleeping for {sleep_time} seconds') 
+        time.sleep(sleep_time)
 
 ### step 3 - score_articles
 def step_3_score_articles(DB_PATH):

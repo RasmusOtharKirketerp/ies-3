@@ -77,9 +77,15 @@ def store_article(base_url, article_data, db_path):
     publish_date = article_data['publish_date']
     if publish_date:
         if isinstance(publish_date, datetime):
-            publish_date_str = publish_date.strftime('%Y-%m-%d')
+            publish_date_str = publish_date.strftime('%Y-%m-%d %H:%M:%S')
         else:
-            publish_date_str = str(publish_date)
+            # If only date (YYYY-MM-DD), add current time
+            try:
+                dt = datetime.strptime(str(publish_date), '%Y-%m-%d')
+                now = datetime.now()
+                publish_date_str = dt.strftime('%Y-%m-%d') + ' ' + now.strftime('%H:%M:%S')
+            except ValueError:
+                publish_date_str = str(publish_date)
     else:
         publish_date_str = None
 

@@ -72,7 +72,10 @@
                             <h5 class="card-title">{{ title }}</h5>
                             <div class="article-meta">
                                 <img src="{{ get_google_favicon(base_url) }}" alt="Favicon" class="favicon">
-                                <small class="text-muted">{{ publish_date }}</small>
+                                <small class="text-muted">
+                                    {{ publish_date }}
+                                    <span class="ms-2" data-publish-date="{{ publish_date }}"></span>
+                                </small>
                                 <span class="badge bg-{{ 'success' if score is not none and score > 0 else 'danger' }}">
                                     Score: {{ "%.2f"|format(score) if score is not none else "N/A" }}
                                 </span>
@@ -94,6 +97,32 @@
     <script src="/static/index.js"></script>
     <script src="/static/weather.js"></script>
     <script src="/static/xolta.js"></script>
+    <script>
+        // Show time since published for each article
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-publish-date]').forEach(function (el) {
+                const dateStr = el.getAttribute('data-publish-date');
+                if (!dateStr) return;
+                // Try to parse as local or UTC
+                let dt = new Date(dateStr.replace(' ', 'T'));
+                if (isNaN(dt)) dt = new Date(dateStr);
+                if (isNaN(dt)) return;
+                const now = new Date();
+                let diff = Math.floor((now - dt) / 1000); // seconds
+                if (diff < 0) return;
+                const days = Math.floor(diff / 86400);
+                diff %= 86400;
+                const hours = Math.floor(diff / 3600);
+                diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                let parts = [];
+                if (days > 0) parts.push(days + 'd');
+                if (hours > 0 || days > 0) parts.push(hours + 'h');
+                parts.push(minutes + 'm');
+                el.textContent = '(' + parts.join(' ') + ' siden)';
+            });
+        });
+    </script>
 </body>
 
 </html>
