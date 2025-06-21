@@ -542,6 +542,9 @@
                             if (unit === '%' && (val > -0.1 && val < 0.1)) {
                                 return '0' + unit;
                             }
+                            if (unit === '%') {
+                                return val.toFixed(0) + ' ' + unit;
+                            }
                             if (unit === '%' && (val == 100)) {
                                 return '100' + unit;
                             }
@@ -554,9 +557,9 @@
                         const xoltaStr = `
                         <i class="bi bi-house"></i> ${safe(xolta["Husforbrug"], '')}
                         <i class="bi bi-sun"></i> ${safe(xolta["Solceller"], '')}
+                        <i class="bi bi-lightning-charge"></i> ${safe(xolta["Nettet"], 'A')}<br>
                         <i class="bi bi-sun"></i> ${safe(xolta["Egenproduktion_pct"], '%')}
-                        <i class="bi bi-lightning-charge"></i> ${safe(xolta["Nettet"], 'A')}
-                        <i class="bi bi-battery-charging"></i> ${safe(xolta["Batteri"], '')}
+                        <i class="bi bi-battery-charging"></i> ${safe(xolta["Batteri"], 'kW')}
                         <i class="bi bi-battery-full"></i> ${safe(xolta["Batteri status"], '%')}
                         
                     `;
