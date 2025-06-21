@@ -66,3 +66,4 @@ REM Start the METTE OG RASMUS app in a new terminal
 start cmd /k "cd /d C:\Users\rasmu\OneDrive\Skrivebord\Dev\ies-3 && call start_mette_og_rasmus_app.bat"
 
 ENDLOCAL
+pause

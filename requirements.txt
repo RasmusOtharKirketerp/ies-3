@@ -307,4 +307,3 @@ xxhash
 yarl
 youtube-transcript-api
 zipp
-imghdr-py3

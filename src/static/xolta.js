@@ -24,9 +24,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (unit === 'A') {
             if (val == -0)
                 val = 0; // Handle -0 case
-            return Number(val).toFixed(1) + '';
+            if (val < 0)
+                unit = ' Sælger'; // Negative current
+            else if (val > 0)
+                unit = ' Køber'; // Positive current
+            val = Math.abs(Number(val)) 
+            return Number(val).toFixed(1) + unit;
         }
         if (unit === 'kW') {
+            unit = '';
             let num = Number(val);
             if (num > -0.05 && num < 0.05) return '0' + unit;
             return num.toFixed(2) + unit;
@@ -48,9 +54,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const xoltaStr = `
                 <i class="bi bi-house"></i> ${safe(xolta["Husforbrug"], '')}
                 <i class="bi bi-sun"></i> ${safe(xolta["Solceller"], '')}
+                <i class="bi bi-battery-charging"></i> ${safe(xolta["Batteri"], 'kW')}
                 <i class="bi bi-lightning-charge"></i> ${safe(xolta["Nettet"], 'A')}<br>
                 <i class="bi bi-sun"></i> ${safe(xolta["Egenproduktion_pct"], '%')}
-                <i class="bi bi-battery-charging"></i> ${safe(xolta["Batteri"], 'kW')}
                 <i class="bi bi-battery-full"></i> ${safe(xolta["Batteri status"], '%')}
                 `;
                 xoltaTickerInner.innerHTML = xoltaStr;

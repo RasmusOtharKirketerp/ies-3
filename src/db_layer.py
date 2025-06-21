@@ -64,7 +64,7 @@ def get_users_websites(DB_PATH):
     # this function fetches the websites of the user
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('''SELECT url FROM websites''')
+    cursor.execute('''SELECT url FROM websites WHERE active = 1''')
     websites = cursor.fetchall()
     conn.close()
     return [website[0] for website in websites]
