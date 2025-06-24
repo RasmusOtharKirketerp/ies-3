@@ -24,9 +24,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (unit === 'A') {
             if (val == -0)
                 val = 0; // Handle -0 case
-            if (val < 0)
+                unit = ' '; // Current in Amperes
+            
+            if (val < -0.09)
                 unit = ' Sælger'; // Negative current
-            else if (val > 0)
+            else if (val > 0.09)
                 unit = ' Køber'; // Positive current
             val = Math.abs(Number(val)) 
             return Number(val).toFixed(1) + unit;
